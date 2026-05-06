@@ -1,0 +1,2691 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>課堂工具箱 Classroom Toolkit</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+    background: #1a1a2e;
+    color: #e8e8f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  /* ── Top nav ── */
+  header {
+    background: #12122a;
+    border-bottom: 1px solid #2e2e5a;
+    padding: 0.6rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  header h1 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #a0a8ff;
+    letter-spacing: 0.03em;
+  }
+  header h1 span { color: #6a73cc; font-weight: 400; font-size: 0.9rem; margin-left: 0.5rem; }
+
+  nav { display: flex; gap: 6px; flex-wrap: wrap; }
+  nav button {
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid #3a3a6a;
+    background: transparent;
+    color: #a0a8c8;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.18s;
+    font-family: inherit;
+  }
+  nav button:hover { background: #2a2a52; }
+  nav button.active {
+    background: #3d3f9a;
+    border-color: #5a5fcf;
+    color: #fff;
+  }
+
+  /* ── Main panels ── */
+  main { flex: 1; padding: 1.5rem; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ══════════════════════════════
+     TIMER PANEL
+  ══════════════════════════════ */
+  .timer-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.8rem;
+    padding-top: 1rem;
+  }
+
+  .timer-display {
+    position: relative;
+    width: 320px;
+    height: 320px;
+  }
+  .timer-svg { width: 100%; height: 100%; }
+  .timer-track { fill: none; stroke: #2a2a4a; stroke-width: 14; }
+  .timer-arc {
+    fill: none;
+    stroke: #5a5fcf;
+    stroke-width: 14;
+    stroke-linecap: round;
+    transform: rotate(-90deg);
+    transform-origin: 160px 160px;
+    transition: stroke-dashoffset 0.9s linear, stroke 0.4s;
+  }
+  .timer-arc.warning { stroke: #e8a030; }
+  .timer-arc.danger  { stroke: #e05050; }
+
+  .timer-inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  #timer-digits {
+    font-size: 5rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #e8e8ff;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  #timer-label {
+    font-size: 0.85rem;
+    color: #6a73aa;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .presets {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .preset-btn {
+    padding: 8px 20px;
+    border-radius: 20px;
+    border: 1px solid #3a3a6a;
+    background: #1e1e3e;
+    color: #b0b8e8;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.18s;
+    font-family: inherit;
+  }
+  .preset-btn:hover { background: #2a2a52; border-color: #5058b0; }
+  .preset-btn.selected { background: #3d3f9a; border-color: #5a5fcf; color: #fff; }
+
+  .custom-time {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #1e1e3e;
+    border: 1px solid #3a3a6a;
+    border-radius: 12px;
+    padding: 8px 14px;
+  }
+  .custom-time label { font-size: 0.82rem; color: #7880b0; }
+  .custom-time input {
+    width: 56px;
+    background: #2a2a4a;
+    border: 1px solid #4a4a8a;
+    border-radius: 6px;
+    color: #e0e0ff;
+    font-size: 0.95rem;
+    text-align: center;
+    padding: 4px 6px;
+    font-family: inherit;
+  }
+  .custom-time input:focus { outline: 2px solid #5a5fcf; }
+  .custom-time span { color: #6a73aa; font-size: 0.82rem; }
+
+  .timer-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .btn-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    transition: all 0.18s;
+  }
+  .btn-play {
+    width: 72px;
+    height: 72px;
+    font-size: 1.8rem;
+    background: #3d3f9a;
+    color: #fff;
+    border: 2px solid #5a5fcf;
+  }
+  .btn-play:hover { background: #4a4fb8; transform: scale(1.05); }
+  .btn-secondary {
+    background: #1e1e3e;
+    color: #8890c8;
+    border: 1px solid #3a3a6a;
+  }
+  .btn-secondary:hover { background: #2a2a52; color: #b0b8e8; }
+
+  #timer-done-banner {
+    display: none;
+    background: #2a1a1a;
+    border: 1px solid #e05050;
+    border-radius: 12px;
+    padding: 12px 28px;
+    color: #ff8080;
+    font-size: 1.1rem;
+    text-align: center;
+    animation: pulse 1s infinite alternate;
+  }
+  @keyframes pulse { from { opacity: 0.7; } to { opacity: 1; } }
+
+  /* ══════════════════════════════
+     TRAFFIC LIGHT PANEL
+  ══════════════════════════════ */
+  .traffic-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    padding-top: 1.5rem;
+  }
+
+  .traffic-light {
+    background: #0e0e1e;
+    border: 3px solid #2a2a4a;
+    border-radius: 24px;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    width: 160px;
+  }
+  .bulb {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.22s;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+  }
+  .bulb-red   { background: #2a1010; border-color: #4a2020; }
+  .bulb-yellow{ background: #2a2010; border-color: #4a4020; }
+  .bulb-green { background: #102a10; border-color: #204a20; }
+  .bulb:hover { transform: scale(1.06); filter: brightness(1.3); }
+
+  .bulb-red.lit   { background: #cc2222; border-color: #ff4444; box-shadow: 0 0 28px #ff4444aa; }
+  .bulb-yellow.lit{ background: #c8901a; border-color: #f5b832; box-shadow: 0 0 28px #f5b832aa; }
+  .bulb-green.lit { background: #1a9a1a; border-color: #44dd44; box-shadow: 0 0 28px #44dd44aa; }
+
+  .traffic-message {
+    text-align: center;
+    padding: 20px 28px;
+    border-radius: 16px;
+    border: 2px solid #2a2a4a;
+    background: #14142a;
+    min-width: 320px;
+    transition: all 0.3s;
+  }
+  .traffic-message .zh { font-size: 2.2rem; font-weight: 700; margin-bottom: 6px; }
+  .traffic-message .en { font-size: 1rem; color: #8890c8; }
+  .traffic-message.red    { border-color: #cc2222; background: #1a0808; }
+  .traffic-message.yellow { border-color: #c8901a; background: #1a1408; }
+  .traffic-message.green  { border-color: #1a9a1a; background: #081408; }
+  .traffic-message.red    .zh { color: #ff7070; }
+  .traffic-message.yellow .zh { color: #f5c860; }
+  .traffic-message.green  .zh { color: #60e060; }
+
+  .traffic-legend {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 100%;
+    max-width: 480px;
+  }
+  .legend-item {
+    background: #14142a;
+    border: 1px solid #2a2a4a;
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .legend-item:hover { background: #1e1e3e; border-color: #4a4a8a; }
+  .legend-item .dot {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    margin: 0 auto 6px;
+  }
+  .dot-red    { background: #cc2222; }
+  .dot-yellow { background: #c8901a; }
+  .dot-green  { background: #1a9a1a; }
+  .legend-item .zh-s { font-size: 0.95rem; font-weight: 600; }
+  .legend-item .en-s { font-size: 0.72rem; color: #6a73aa; margin-top: 2px; }
+
+  /* ══════════════════════════════
+     AGENDA PANEL
+  ══════════════════════════════ */
+  .agenda-wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .agenda-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .agenda-header h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #a0a8ff;
+  }
+  .agenda-header h2 span { color: #6a73cc; font-weight: 400; font-size: 0.85rem; margin-left: 6px; }
+
+  .agenda-add {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+  .agenda-add input {
+    flex: 1;
+    background: #1e1e3e;
+    border: 1px solid #3a3a6a;
+    border-radius: 8px;
+    color: #e0e0ff;
+    font-size: 0.95rem;
+    padding: 8px 14px;
+    font-family: inherit;
+  }
+  .agenda-add input:focus { outline: 2px solid #5a5fcf; border-color: transparent; }
+  .agenda-add input::placeholder { color: #4a5080; }
+  .btn-add {
+    background: #3d3f9a;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1.2rem;
+    width: 42px;
+    cursor: pointer;
+    transition: background 0.18s;
+    font-family: inherit;
+  }
+  .btn-add:hover { background: #4a4fb8; }
+
+  #agenda-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+
+  .agenda-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #1a1a32;
+    border: 1px solid #2a2a4a;
+    border-radius: 10px;
+    padding: 12px 14px;
+    transition: all 0.18s;
+    cursor: grab;
+  }
+  .agenda-item:hover { border-color: #3a3a6a; background: #1e1e38; }
+  .agenda-item.done { opacity: 0.45; }
+  .agenda-item.done .agenda-text { text-decoration: line-through; color: #5a6080; }
+
+  .agenda-check {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid #4a5090;
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .agenda-check.checked {
+    background: #3d3f9a;
+    border-color: #5a5fcf;
+  }
+  .agenda-check.checked::after {
+    content: '✓';
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .agenda-text { flex: 1; font-size: 1rem; color: #d0d4f8; }
+  .agenda-number {
+    font-size: 0.75rem;
+    color: #4a5080;
+    font-variant-numeric: tabular-nums;
+    min-width: 20px;
+    text-align: right;
+  }
+  .agenda-del {
+    background: transparent;
+    border: none;
+    color: #4a5080;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: all 0.18s;
+    font-family: inherit;
+  }
+  .agenda-del:hover { background: #2a1010; color: #ff7070; }
+
+  .agenda-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .progress-bar-bg {
+    flex: 1;
+    height: 6px;
+    background: #2a2a4a;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: #3d3f9a;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+  .progress-label { font-size: 0.78rem; color: #6a73aa; white-space: nowrap; }
+
+  /* ══════════════════════════════
+     RANDOM PICKER PANEL
+  ══════════════════════════════ */
+  .picker-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding-top: 1rem;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .picker-display {
+    width: 100%;
+    min-height: 140px;
+    background: #0e0e22;
+    border: 2px solid #2e2e5a;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .picker-result {
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: #a0a8ff;
+    text-align: center;
+    transition: opacity 0.1s;
+    min-height: 60px;
+  }
+  .picker-sublabel { font-size: 0.8rem; color: #5a62a0; }
+
+  .picker-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .btn-pick {
+    padding: 12px 32px;
+    background: #3d3f9a;
+    border: 2px solid #5a5fcf;
+    border-radius: 24px;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s;
+    font-family: inherit;
+  }
+  .btn-pick:hover { background: #4a4fb8; transform: scale(1.03); }
+
+  .picker-roster {
+    width: 100%;
+    background: #14142a;
+    border: 1px solid #2a2a4a;
+    border-radius: 14px;
+    padding: 14px;
+  }
+  .roster-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .roster-header span { font-size: 0.82rem; color: #7880b0; }
+  .roster-header button {
+    background: transparent;
+    border: 1px solid #3a3a6a;
+    border-radius: 6px;
+    color: #7880b0;
+    font-size: 0.78rem;
+    padding: 3px 10px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .roster-header button:hover { background: #2a2a4a; color: #b0b8e8; }
+
+  .roster-add {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .roster-add textarea {
+    flex: 1;
+    background: #1e1e3e;
+    border: 1px solid #3a3a6a;
+    border-radius: 8px;
+    color: #e0e0ff;
+    font-size: 0.88rem;
+    padding: 6px 10px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 64px;
+  }
+  .roster-add textarea:focus { outline: 2px solid #5a5fcf; border-color: transparent; }
+  .roster-add textarea::placeholder { color: #4a5080; }
+
+  #name-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .name-chip {
+    background: #1e1e3e;
+    border: 1px solid #3a3a6a;
+    border-radius: 14px;
+    padding: 4px 10px;
+    font-size: 0.82rem;
+    color: #b0b8e8;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.18s;
+  }
+  .name-chip.picked { border-color: #5a5fcf; background: #2a2a5a; color: #c0c8ff; }
+  .name-chip.excluded { opacity: 0.35; }
+  .chip-del {
+    background: none;
+    border: none;
+    color: #4a5080;
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 0 1px;
+    line-height: 1;
+    font-family: inherit;
+  }
+  .chip-del:hover { color: #ff7070; }
+
+  /* ══════════════════════════════
+     FULLSCREEN button
+  ══════════════════════════════ */
+  .fs-btn {
+    background: transparent;
+    border: 1px solid #3a3a6a;
+    border-radius: 8px;
+    color: #7880b0;
+    font-size: 0.8rem;
+    padding: 5px 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.18s;
+  }
+  .fs-btn:hover { background: #2a2a52; color: #b0b8e8; }
+
+  /* ══════════════════════════════
+     LESSON LIBRARY PANEL
+  ══════════════════════════════ */
+  .lessons-wrap {
+    max-width: 740px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    padding-top: 0.5rem;
+  }
+  .lessons-header h2 { font-size: 1.1rem; font-weight: 600; color: #a0a8ff; }
+  .lessons-header h2 span { color: #6a73cc; font-weight: 400; font-size: 0.85rem; margin-left: 6px; }
+
+  .sel-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+  .sel-label { font-size: 0.82rem; color: #7880b0; white-space: nowrap; min-width: 64px; padding-top: 7px; }
+  .sel-btn {
+    padding: 6px 14px; border-radius: 16px; border: 1px solid #3a3a6a;
+    background: #1a1a32; color: #a0a8c8; font-size: 0.85rem; cursor: pointer;
+    transition: all 0.18s; font-family: inherit; line-height: 1.3; text-align: center;
+  }
+  .sel-btn:hover { background: #2a2a52; border-color: #5058b0; }
+  .sel-btn.active { background: #3d3f9a; border-color: #5a5fcf; color: #fff; }
+
+  .lesson-card {
+    background: #14142a; border: 1px solid #2a2a5a; border-radius: 14px;
+    padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.8rem;
+  }
+  .lesson-title { font-size: 1.3rem; font-weight: 600; color: #d0d4f8; }
+  .lesson-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 6px; }
+  .badge { padding: 3px 10px; border-radius: 10px; font-size: 0.75rem; font-weight: 500; }
+  .badge-theme  { background: #1e2060; border: 1px solid #3a3f9a; color: #8a90e8; }
+  .badge-teacher{ background: #1a2a1a; border: 1px solid #2a5a2a; color: #6aaa6a; }
+  .badge-date   { background: #1a1a2a; border: 1px solid #3a3a5a; color: #7880b0; }
+
+  .lesson-agenda-preview { border-top: 1px solid #2a2a4a; padding-top: 0.8rem; }
+  .preview-label { font-size: 0.72rem; color: #5a6090; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .lesson-agenda-preview ol { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  .lesson-agenda-preview li { font-size: 0.88rem; color: #a0a8d0; display: flex; gap: 8px; align-items: baseline; }
+  .step-time { color: #5a6090; font-size: 0.75rem; white-space: nowrap; flex-shrink: 0; min-width: 38px; }
+
+  .lesson-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn-load {
+    padding: 8px 20px; background: #3d3f9a; border: 2px solid #5a5fcf;
+    border-radius: 20px; color: #fff; font-size: 0.88rem; font-weight: 600;
+    cursor: pointer; transition: all 0.18s; font-family: inherit;
+  }
+  .btn-load:hover { background: #4a4fb8; transform: scale(1.02); }
+  .btn-doc {
+    padding: 8px 18px; background: transparent; border: 1px solid #3a3a6a;
+    border-radius: 20px; color: #7880b0; font-size: 0.88rem; cursor: pointer;
+    transition: all 0.18s; font-family: inherit; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .btn-doc:hover { background: #1e1e3e; color: #b0b8e8; border-color: #5058b0; }
+  .no-selection { text-align: center; padding: 2rem; color: #4a5080; font-size: 0.9rem; }
+
+  /* ── Mode tabs ── */
+  .mode-tabs { display:flex; gap:6px; margin-bottom:1rem; }
+  .mode-tab {
+    padding:6px 18px; border-radius:20px; border:1px solid #3a3a6a;
+    background:transparent; color:#7880b0; font-size:0.82rem;
+    cursor:pointer; transition:all 0.18s; font-family:inherit;
+  }
+  .mode-tab:hover { background:#2a2a52; }
+  .mode-tab.active { background:#3d3f9a; border-color:#5a5fcf; color:#fff; }
+
+  /* ── Import form ── */
+  .import-form {
+    background:#12122a; border:1px solid #2a2a50; border-radius:12px;
+    padding:16px; display:flex; flex-direction:column; gap:12px;
+  }
+  .import-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .import-row label { font-size:0.78rem; color:#7880b0; min-width:60px; }
+  .import-input {
+    flex:1; min-width:200px; background:#1e1e3a; border:1px solid #3a3a6a;
+    border-radius:8px; color:#e0e0ff; font-size:0.85rem; padding:7px 10px;
+    font-family:inherit;
+  }
+  .import-input:focus { outline:2px solid #5a5fcf; }
+  .import-textarea {
+    width:100%; min-height:120px; background:#1e1e3a; border:1px solid #3a3a6a;
+    border-radius:8px; color:#d0d0f0; font-size:0.82rem; padding:8px 10px;
+    font-family:inherit; resize:vertical; line-height:1.5;
+  }
+  .import-textarea:focus { outline:2px solid #5a5fcf; }
+  .import-mode-row { display:flex; gap:12px; flex-wrap:wrap; }
+  .import-radio { display:flex; align-items:center; gap:5px; cursor:pointer; }
+  .import-radio input { accent-color:#5a5fcf; cursor:pointer; }
+  .import-radio span { font-size:0.82rem; color:#9098c8; }
+  .import-radio input:checked + span { color:#d0d4ff; }
+  .btn-analyze {
+    padding:9px 24px; border-radius:20px; border:none;
+    background:linear-gradient(135deg,#3d3f9a,#5a3fa0);
+    color:#fff; font-size:0.88rem; font-weight:600;
+    cursor:pointer; font-family:inherit; transition:all 0.18s;
+    align-self:flex-start;
+  }
+  .btn-analyze:hover { filter:brightness(1.15); }
+  .btn-analyze:disabled { opacity:0.5; cursor:not-allowed; }
+  .import-hint { font-size:0.75rem; color:#4a5280; line-height:1.5; }
+  .analyze-status {
+    font-size:0.82rem; padding:6px 12px; border-radius:8px;
+    background:#1a1a2e; border:1px solid #2a2a50; color:#7880b0;
+    display:none;
+  }
+  .analyze-status.ok  { border-color:#2a5a2a; color:#6aaa6a; }
+  .analyze-status.err { border-color:#5a2a2a; color:#e08080; }
+
+  /* ── File drop zone ── */
+  .file-drop-zone {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:8px; padding:20px 16px; border-radius:10px;
+    border:2px dashed #3a3a6a; background:#0e0e1e;
+    cursor:pointer; transition:all 0.18s; text-align:center;
+  }
+  .file-drop-zone:hover, .file-drop-zone.drag-over {
+    border-color:#5a5fcf; background:#141428;
+  }
+  .file-drop-zone .drop-icon { font-size:1.8rem; }
+  .file-drop-zone .drop-label { font-size:0.82rem; color:#7880b0; }
+  .file-drop-zone .drop-label strong { color:#a0a8d8; }
+  .file-drop-zone .drop-types { font-size:0.72rem; color:#4a5280; margin-top:2px; }
+  .file-loaded { font-size:0.8rem; color:#6aaa6a; display:none; margin-top:4px; }
+  #ai-settings summary::-webkit-details-marker { display:none; }
+  .ai-on { background:#1a2a1a !important; border-color:#2a6a2a !important; color:#6aaa6a !important; }
+
+  /* ── Folder config panel ── */
+  .folder-config {
+    background:#0e0e1c; border:1px solid #2a2a50; border-radius:10px;
+    padding:12px 14px; margin-bottom:10px; display:flex;
+    flex-direction:column; gap:10px;
+  }
+  .folder-config-header {
+    display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;
+  }
+  .folder-config-title { font-size:0.82rem; font-weight:600; color:#a0a8d8; }
+  .folder-source-tag {
+    font-size:0.72rem; padding:2px 10px; border-radius:10px;
+    background:#1a1a2e; border:1px solid #3a3a5a; color:#7880b0;
+  }
+  .folder-source-tag.custom { background:#1a2a1a; border-color:#2a5a2a; color:#6aaa6a; }
+  .folder-input-row { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .folder-input-row input {
+    flex:1; min-width:200px; background:#1a1a2e; border:1px solid #3a3a6a;
+    border-radius:8px; color:#e0e0ff; font-size:0.82rem; padding:6px 10px; font-family:inherit;
+  }
+  .folder-input-row input:focus { outline:2px solid #5a5fcf; }
+  .btn-scan {
+    padding:6px 16px; border-radius:16px; border:none;
+    background:linear-gradient(135deg,#3d3f9a,#5a3fa0);
+    color:#fff; font-size:0.8rem; font-weight:600;
+    cursor:pointer; font-family:inherit; white-space:nowrap; transition:filter 0.18s;
+  }
+  .btn-scan:hover { filter:brightness(1.15); }
+  .btn-scan:disabled { opacity:0.5; cursor:not-allowed; }
+  .btn-use-builtin {
+    padding:5px 12px; border-radius:14px; border:1px solid #3a3a6a;
+    background:transparent; color:#6a73aa; font-size:0.75rem;
+    cursor:pointer; font-family:inherit; transition:all 0.15s;
+  }
+  .btn-use-builtin:hover { background:#1e1e3a; color:#a0a8d8; }
+  .scan-log {
+    font-size:0.75rem; color:#4a5280; line-height:1.7; max-height:130px;
+    overflow-y:auto; background:#080812; border-radius:6px; padding:6px 10px;
+    border:1px solid #1a1a30; display:none; font-family:monospace;
+  }
+  .scan-log .log-ok  { color:#6aaa6a; }
+  .scan-log .log-err { color:#e08080; }
+  .scan-log .log-info{ color:#8890c8; }
+  .folder-hint { font-size:0.72rem; color:#3a3a60; line-height:1.5; }
+
+  .fixed-block { padding: 10px 14px; border-radius: 10px; border: 1px solid; }
+  .fixed-checkin { background: #0d1e14; border-color: #1a4a2a; }
+  .fixed-circle  { background: #150d25; border-color: #3a1a5a; }
+  .fixed-block-header {
+    font-size: 0.8rem; font-weight: 600; display: flex;
+    align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 5px;
+  }
+  .fixed-checkin .fixed-block-header { color: #3a9a5a; }
+  .fixed-circle  .fixed-block-header { color: #8a5ab0; }
+  .fixed-block-text { font-size: 0.88rem; color: #90b090; }
+  .fixed-circle  .fixed-block-text  { color: #b090d0; }
+  .time-badge {
+    font-size: 0.68rem; background: #1e1e3a; border: 1px solid #3a3a6a;
+    border-radius: 8px; padding: 2px 8px; color: #5a63aa; font-weight: 400;
+  }
+
+  .act-select-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px; flex-wrap: wrap; gap: 6px;
+  }
+  .time-tracker { font-size: 0.82rem; color: #6a73aa; }
+  .time-fill { font-weight: 700; font-size: 1.05rem; color: #5a5fcf; transition: color 0.2s; }
+
+  .activity-card {
+    display: flex; gap: 10px; align-items: center;
+    padding: 9px 12px; border-radius: 10px;
+    border: 1px solid #2a2a4a; background: #14142a;
+    margin-bottom: 6px; cursor: pointer; transition: all 0.18s; user-select: none;
+  }
+  .activity-card:hover   { border-color: #4a4a8a; background: #1a1a38; }
+  .activity-card.selected{ border-color: #3d3f9a; background: #181840; }
+  .act-toggle {
+    width: 20px; height: 20px; border-radius: 5px; flex-shrink: 0;
+    border: 2px solid #3a3a6a; background: transparent; transition: all 0.18s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .act-toggle.on { background: #3d3f9a; border-color: #5a5fcf; }
+  .act-toggle.on::after { content: '✓'; color: #fff; font-size: 0.7rem; font-weight: 700; }
+  .act-info { flex: 1; }
+  .act-name { font-size: 0.9rem; color: #b8c0e8; font-weight: 500; }
+  .act-desc { font-size: 0.75rem; color: #5a6090; margin-top: 2px; }
+  .activity-card.selected .act-name { color: #d8dcff; }
+  .activity-card.selected .act-desc { color: #7880b0; }
+  .act-time {
+    font-size: 0.78rem; color: #6a73aa; background: #1e1e3a;
+    border: 1px solid #2a2a5a; border-radius: 8px;
+    padding: 2px 8px; white-space: nowrap; flex-shrink: 0;
+  }
+  .activity-card.selected .act-time { border-color: #3a3f8a; color: #8890d8; }
+
+  /* ── Sticky header ── */
+  header { position: sticky; top: 0; z-index: 200; }
+
+  /* ── Floating mini-timer ── */
+  #mini-timer {
+    display: flex; align-items: center; gap: 7px;
+    background: #0e0e22; border: 1px solid #3a3a6a;
+    border-radius: 12px; padding: 5px 10px;
+    flex-shrink: 0;
+  }
+  .mini-pre {
+    padding: 3px 9px; border-radius: 10px;
+    border: 1px solid #3a3a6a; background: transparent;
+    color: #8890c8; font-size: 0.75rem; cursor: pointer;
+    font-family: inherit; transition: all 0.15s; white-space: nowrap;
+  }
+  .mini-pre:hover { background: #2a2a52; }
+  .mini-pre.active { background: #3d3f9a; border-color: #5a5fcf; color: #fff; }
+  #mini-custom-row {
+    display: none; align-items: center; gap: 4px;
+    position: absolute; top: 100%; right: 0; margin-top: 4px;
+    background: #12122a; border: 1px solid #3a3a6a;
+    border-radius: 10px; padding: 6px 10px; z-index: 300;
+  }
+  #mini-custom-row input {
+    width: 42px; background: #1e1e3e; border: 1px solid #4a4a8a;
+    border-radius: 6px; color: #e0e0ff; font-size: 0.85rem;
+    text-align: center; padding: 3px 5px; font-family: inherit;
+  }
+  #mini-custom-row span { color: #6a73aa; font-size: 0.78rem; }
+  #mini-custom-row button {
+    padding: 3px 9px; background: #3d3f9a; border: none;
+    border-radius: 6px; color: #fff; font-size: 0.75rem;
+    cursor: pointer; font-family: inherit;
+  }
+  #mini-sep { width: 1px; height: 18px; background: #2a2a4a; flex-shrink: 0; }
+  #mini-digits {
+    font-size: 1.25rem; font-weight: 700; color: #e0e0ff;
+    font-variant-numeric: tabular-nums; letter-spacing: 0.04em;
+    min-width: 52px; text-align: center; transition: color 0.3s;
+  }
+  #mini-digits.warn   { color: #e8a030; }
+  #mini-digits.danger { color: #e05050; }
+  #mini-play-btn, #mini-reset-btn {
+    background: transparent; border: 1px solid #3a3a6a;
+    border-radius: 7px; color: #8890c8; font-size: 0.8rem;
+    cursor: pointer; padding: 3px 8px; transition: all 0.15s;
+    font-family: inherit;
+  }
+  #mini-play-btn:hover, #mini-reset-btn:hover { background: #2a2a52; color: #b0b8e8; }
+  #mini-timer-wrap { position: relative; }
+
+  /* ── Check-in option selector ── */
+  .ci-options { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+  .ci-option {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 7px 10px; border-radius: 8px;
+    border: 1px solid #2a2a50; background: #141428;
+    cursor: pointer; font-size: 0.82rem; color: #8890c8;
+    transition: all 0.15s; line-height: 1.4;
+  }
+  .ci-option:hover { background: #1e1e3c; border-color: #3a3a6a; color: #b0b8e8; }
+  .ci-option.active {
+    background: #1a1f4a; border-color: #5a5fcf; color: #d0d4ff;
+  }
+  .ci-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; border-radius: 50%;
+    background: #2a2a52; color: #8890c8; font-size: 0.7rem;
+    font-weight: 700; flex-shrink: 0; margin-top: 1px;
+  }
+  .ci-option.active .ci-num { background: #3d3f9a; color: #fff; }
+
+  /* ── Activity step hints ── */
+  .act-steps { margin-top: 5px; display: flex; flex-direction: column; gap: 2px; }
+  .act-step { font-size: 0.75rem; color: #6a73aa; padding-left: 4px; line-height: 1.45; }
+  .act-step::before { content: '→ '; color: #4a52a0; }
+
+  /* ── Decision Mind-Map diagram ── */
+  .decision-map {
+    margin-top: 10px; padding: 12px 10px 8px;
+    background: #0d0d20; border: 1px solid #2a2a50;
+    border-radius: 10px; overflow-x: auto;
+  }
+  .dm-title {
+    text-align: center; font-size: 0.78rem; color: #6a73aa;
+    margin-bottom: 8px; letter-spacing: 0.06em;
+  }
+  .dm-flow {
+    display: flex; align-items: stretch; justify-content: center;
+    gap: 0; flex-wrap: nowrap; min-width: 520px;
+  }
+  .dm-step {
+    display: flex; flex-direction: column; align-items: center;
+    flex: 1; min-width: 110px;
+  }
+  .dm-box {
+    border-radius: 10px; padding: 6px 8px; text-align: center;
+    font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+    width: 100%; box-sizing: border-box;
+  }
+  .dm-box-stop   { background:#2a1010; border:1.5px solid #cc3333; color:#ff8080; }
+  .dm-box-think  { background:#1a1a2a; border:1.5px solid #5a5fcf; color:#a0a8ff; }
+  .dm-box-choose { background:#102010; border:1.5px solid #2a8a2a; color:#60d060; }
+  .dm-box-own    { background:#1a1028; border:1.5px solid #8855cc; color:#cc99ff; }
+  .dm-sub {
+    margin-top: 4px; font-size: 0.67rem; color: #5a6090;
+    text-align: center; line-height: 1.4; padding: 0 4px;
+  }
+  .dm-branches {
+    display: flex; flex-direction: column; gap: 3px;
+    margin-top: 4px; width: 100%; padding: 0 4px;
+  }
+  .dm-branch {
+    font-size: 0.67rem; color: #4a5280; padding: 2px 6px;
+    background: #141428; border-radius: 4px; border-left: 2px solid #2a2a60;
+  }
+  .dm-arrow {
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 4px; font-size: 1rem; color: #3a3a6a; flex-shrink: 0;
+    align-self: flex-start; margin-top: 10px;
+  }
+  .dm-start {
+    text-align: center; font-size: 0.78rem; color: #7880b0;
+    background: #161628; border: 1px dashed #3a3a6a; border-radius: 20px;
+    padding: 4px 14px; margin: 0 auto 6px; display: inline-block;
+  }
+
+  /* Fullscreen overrides */
+  :fullscreen body, :-webkit-full-screen body {
+    background: #0a0a1a;
+  }
+  :fullscreen #timer-digits, :-webkit-full-screen #timer-digits {
+    font-size: 7rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>課堂工具箱 <span>Classroom Toolkit</span></h1>
+  <nav>
+    <button class="active" data-panel="lessons">📚 教案庫 Lessons</button>
+  </nav>
+  <div id="mini-timer-wrap">
+    <div id="mini-timer">
+      <div id="mini-presets" style="display:flex;gap:4px;">
+        <button class="mini-pre active" id="mp-40" onclick="setMiniTimer(40)">40 分</button>
+        <button class="mini-pre" id="mp-5"  onclick="setMiniTimer(5)">5 分</button>
+        <button class="mini-pre" id="mp-c"  onclick="toggleMiniCustom()">自訂</button>
+      </div>
+      <div id="mini-custom-row">
+        <input type="number" id="mini-cust" min="1" max="99" value="10">
+        <span>分</span>
+        <button onclick="applyMiniCustom()">設定</button>
+      </div>
+      <div id="mini-sep"></div>
+      <div id="mini-digits">40:00</div>
+      <button id="mini-play-btn"  onclick="toggleMiniPlay()">▶</button>
+      <button id="mini-reset-btn" onclick="resetMiniTimer()">↺</button>
+    </div>
+  </div>
+  <button class="fs-btn" onclick="toggleFullscreen()">⛶ 全螢幕</button>
+</header>
+
+<main>
+
+  <!-- ── TIMER PANEL ── -->
+  <div class="panel" id="panel-timer">
+    <div class="timer-wrap">
+
+      <div class="timer-display">
+        <svg class="timer-svg" viewBox="0 0 320 320">
+          <circle class="timer-track" cx="160" cy="160" r="136"/>
+          <circle class="timer-arc" id="arc" cx="160" cy="160" r="136"
+            stroke-dasharray="854.5"
+            stroke-dashoffset="0"/>
+        </svg>
+        <div class="timer-inner">
+          <div id="timer-digits">00:00</div>
+          <div id="timer-label">準備開始 / Ready</div>
+        </div>
+      </div>
+
+      <div class="presets">
+        <button class="preset-btn" data-min="3">3 min</button>
+        <button class="preset-btn" data-min="5">5 min</button>
+        <button class="preset-btn" data-min="10">10 min</button>
+        <button class="preset-btn" data-min="15">15 min</button>
+        <button class="preset-btn" data-min="20">20 min</button>
+      </div>
+
+      <div class="custom-time">
+        <label>自訂 Custom:</label>
+        <input type="number" id="custom-min" min="1" max="99" value="5" placeholder="5">
+        <span>分鐘 min</span>
+        <button class="preset-btn" id="custom-set-btn" style="margin-left:6px;padding:5px 14px;font-size:0.82rem;" onclick="setCustom()">設定 Set</button>
+      </div>
+
+      <div class="timer-controls">
+        <button class="btn-icon btn-secondary" title="Reset" onclick="resetTimer()">↺</button>
+        <button class="btn-icon btn-play" id="play-btn" onclick="toggleTimer()">▶</button>
+        <button class="btn-icon btn-secondary" title="+1 min" onclick="addMinute()">+1'</button>
+      </div>
+
+      <div id="timer-done-banner">
+        ⏰ 時間到！Time's up！
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── TRAFFIC LIGHT PANEL ── -->
+  <div class="panel" id="panel-traffic">
+    <div class="traffic-wrap">
+
+      <div style="display:flex;gap:2rem;align-items:center;flex-wrap:wrap;justify-content:center;">
+        <div class="traffic-light">
+          <div class="bulb bulb-red"    id="b-red"    onclick="setLight('red')"   ></div>
+          <div class="bulb bulb-yellow" id="b-yellow" onclick="setLight('yellow')"></div>
+          <div class="bulb bulb-green"  id="b-green"  onclick="setLight('green')" ></div>
+        </div>
+
+        <div class="traffic-message" id="traffic-msg">
+          <div class="zh" id="msg-zh">請選擇狀態</div>
+          <div class="en" id="msg-en">Click a light to set classroom status</div>
+        </div>
+      </div>
+
+      <div class="traffic-legend">
+        <div class="legend-item" onclick="setLight('red')">
+          <div class="dot dot-red"></div>
+          <div class="zh-s" style="color:#ff7070;">請安靜</div>
+          <div class="en-s">Quiet please</div>
+        </div>
+        <div class="legend-item" onclick="setLight('yellow')">
+          <div class="dot dot-yellow"></div>
+          <div class="zh-s" style="color:#f5c860;">小聲討論</div>
+          <div class="en-s">Soft voices</div>
+        </div>
+        <div class="legend-item" onclick="setLight('green')">
+          <div class="dot dot-green"></div>
+          <div class="zh-s" style="color:#60e060;">自由討論</div>
+          <div class="en-s">Free discussion</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── AGENDA PANEL ── -->
+  <div class="panel" id="panel-agenda">
+    <div class="agenda-wrap">
+
+      <div class="agenda-header">
+        <h2>課堂流程 <span>Class Agenda</span></h2>
+      </div>
+
+      <div class="agenda-add">
+        <input type="text" id="agenda-input" placeholder="新增流程項目… Add agenda item…" onkeydown="if(event.key==='Enter')addAgendaItem()">
+        <button class="btn-add" onclick="addAgendaItem()">＋</button>
+      </div>
+
+      <div class="agenda-progress">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="agenda-bar" style="width:0%"></div></div>
+        <div class="progress-label" id="agenda-pct">0 / 0</div>
+      </div>
+
+      <ul id="agenda-list">
+        <!-- items injected by JS -->
+      </ul>
+
+    </div>
+  </div>
+
+  <!-- ── PICKER PANEL ── -->
+  <div class="panel" id="panel-picker">
+    <div class="picker-wrap">
+
+      <div class="picker-display">
+        <div class="picker-result" id="picker-result">—</div>
+        <div class="picker-sublabel" id="picker-sub">請先輸入學生名單 / Enter student names first</div>
+      </div>
+
+      <div class="picker-actions">
+        <button class="btn-pick" onclick="pickRandom()">🎲 隨機點名 Pick!</button>
+        <button class="btn-secondary" style="padding:10px 20px;border-radius:20px;background:#1e1e3e;border:1px solid #3a3a6a;color:#8890c8;font-size:0.9rem;cursor:pointer;font-family:inherit;" onclick="resetPicks()">重設 Reset</button>
+      </div>
+
+      <div class="picker-roster">
+        <div class="roster-header">
+          <span>學生名單 Student Roster</span>
+          <button onclick="clearRoster()">清除全部 Clear all</button>
+        </div>
+        <div class="roster-add">
+          <textarea id="roster-input" placeholder="輸入名字，每行一個…&#10;Enter names, one per line…&#10;&#10;e.g.&#10;小明&#10;小華&#10;Allen"></textarea>
+        </div>
+        <button class="btn-secondary" style="width:100%;padding:8px;border-radius:8px;background:#1e1e3e;border:1px solid #3a3a6a;color:#8890c8;font-size:0.88rem;cursor:pointer;margin-bottom:10px;font-family:inherit;" onclick="loadRoster()">載入名單 Load names</button>
+        <div id="name-chips"></div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ── LESSON LIBRARY PANEL ── -->
+  <div class="panel active" id="panel-lessons">
+    <div class="lessons-wrap">
+      <div class="lessons-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <h2>教案庫 <span id="lib-year-label">辰光 114 下學期</span></h2>
+        <button onclick="toggleFolderConfig()" id="folder-cfg-btn"
+          style="padding:4px 12px;border-radius:14px;border:1px solid #3a3a6a;background:transparent;color:#6a73aa;font-size:0.78rem;cursor:pointer;font-family:inherit;">
+          📁 更換資料夾
+        </button>
+      </div>
+
+      <!-- Folder config (hidden by default) -->
+      <div class="folder-config" id="folder-config" style="display:none;">
+        <div class="folder-config-header">
+          <span class="folder-config-title">📁 教案資料夾設定</span>
+          <span class="folder-source-tag" id="folder-source-tag">目前：114下（內建）</span>
+        </div>
+        <div class="folder-input-row">
+          <input id="folder-year-name" placeholder="學期標籤，例：辰光 115 下學期" style="max-width:200px;">
+          <input id="folder-url" placeholder="貼上 Google Drive 資料夾網址…" oninput="onFolderInput()">
+          <input id="drive-api-key" placeholder="Drive API Key（公開資料夾可留空）" style="max-width:200px;">
+          <button class="btn-scan" id="scan-btn" onclick="scanFolder()">🔍 掃描資料夾</button>
+        </div>
+        <div class="scan-log" id="scan-log"></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <button class="btn-use-builtin" onclick="useBuiltinDB()">↩ 回復內建 114下</button>
+          <span class="folder-hint">資料夾內每份教案檔名建議含年級與週次，例：1年級_W3_社會覺察.docx</span>
+        </div>
+      </div>
+
+      <div class="sel-row">
+        <span class="sel-label">年級</span>
+        <div id="grade-btns" style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="sel-btn" data-grade="1" onclick="selectGrade(1)">一年級</button>
+          <button class="sel-btn" data-grade="2" onclick="selectGrade(2)">二年級</button>
+          <button class="sel-btn" data-grade="3" onclick="selectGrade(3)">三年級</button>
+          <button class="sel-btn" data-grade="4" onclick="selectGrade(4)">四年級</button>
+          <button class="sel-btn" data-grade="5" onclick="selectGrade(5)">五年級</button>
+          <button class="sel-btn" data-grade="6" onclick="selectGrade(6)">六年級</button>
+          <button class="sel-btn" data-grade="custom" onclick="selectGrade('custom')" style="border-style:dashed;color:#8890c8;">＋ 單課教案</button>
+        </div>
+      </div>
+
+      <!-- Week row (grades 1–6) -->
+      <div class="sel-row" id="week-row" style="display:none;">
+        <span class="sel-label">週次</span>
+        <div id="week-btns" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+      </div>
+
+      <!-- Single-lesson import form (grade = custom) -->
+      <div id="import-inline" style="display:none;margin-top:8px;">
+        <div class="import-form">
+          <div class="import-row">
+            <label>學年度 / 課名</label>
+            <input class="import-input" id="year-label" placeholder="例：115下 第3週、社會覺察自訂課…">
+          </div>
+          <div>
+            <div style="font-size:0.78rem;color:#7880b0;margin-bottom:6px;">教案來源</div>
+            <div class="import-mode-row">
+              <label class="import-radio"><input type="radio" name="src-mode" value="file" checked><span>上傳檔案</span></label>
+              <label class="import-radio"><input type="radio" name="src-mode" value="url"><span>Google Doc 網址</span></label>
+              <label class="import-radio"><input type="radio" name="src-mode" value="text"><span>貼上文字</span></label>
+            </div>
+          </div>
+          <div id="file-row">
+            <div class="file-drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()"
+                 ondragover="event.preventDefault();this.classList.add('drag-over')"
+                 ondragleave="this.classList.remove('drag-over')"
+                 ondrop="handleFileDrop(event)">
+              <div class="drop-icon">📂</div>
+              <div class="drop-label">點擊選擇或拖曳教案檔案到這裡<br><strong>支援 .txt、.docx、.pdf</strong></div>
+              <div class="drop-types">.txt 直接讀取 ／ .docx 自動解析文字 ／ .pdf 提取文字內容</div>
+            </div>
+            <input type="file" id="file-input" accept=".txt,.docx,.pdf" style="display:none" onchange="handleFileSelect(this)">
+            <div class="file-loaded" id="file-loaded">✓ 已讀取：<span id="file-name"></span></div>
+          </div>
+          <div id="url-row" style="display:none;">
+            <input class="import-input" id="lesson-url" placeholder="https://docs.google.com/document/d/…" style="width:100%;">
+            <div class="import-hint" style="margin-top:4px;">文件須設為「任何人可檢視」才能自動讀取</div>
+          </div>
+          <div id="text-row" style="display:none;">
+            <textarea class="import-textarea" id="lesson-text" placeholder="將教案文字貼在這裡（課程目標、活動說明、引導問題等）…"></textarea>
+          </div>
+          <!-- AI API key setting -->
+          <details id="ai-settings" style="margin-top:2px;">
+            <summary style="font-size:0.78rem;color:#5a6090;cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:5px;">
+              <span id="ai-badge" style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;background:#1a1a2e;border:1px solid #3a3a5a;font-size:0.72rem;">⚙️ AI 分析設定</span>
+            </summary>
+            <div style="margin-top:8px;padding:10px 12px;background:#0e0e1e;border:1px solid #2a2a50;border-radius:8px;display:flex;flex-direction:column;gap:8px;">
+              <div style="font-size:0.75rem;color:#7880b0;">輸入 Claude API Key 後，分析將使用 AI 生成更精準的 check-in、活動建議與圍圈題目。未填則使用關鍵字分析。</div>
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                <input class="import-input" id="claude-key" type="password" placeholder="sk-ant-…" style="flex:1;min-width:200px;font-family:monospace;font-size:0.8rem;">
+                <button onclick="saveApiKey()" style="padding:5px 14px;background:#3d3f9a;border:none;border-radius:7px;color:#fff;font-size:0.78rem;cursor:pointer;font-family:inherit;">儲存</button>
+                <button onclick="clearApiKey()" style="padding:5px 10px;background:transparent;border:1px solid #3a3a6a;border-radius:7px;color:#6a6a9a;font-size:0.78rem;cursor:pointer;font-family:inherit;">清除</button>
+              </div>
+              <div id="key-status" style="font-size:0.72rem;color:#4a5280;"></div>
+              <div style="font-size:0.7rem;color:#3a3a60;">Key 僅存在您的瀏覽器本機（localStorage），不會上傳任何伺服器。</div>
+            </div>
+          </details>
+
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px;">
+            <button class="btn-analyze" id="analyze-btn" onclick="analyzeLesson()">🔍 分析教案 → 生成流程</button>
+            <div class="analyze-status" id="analyze-status"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="lesson-display">
+        <div class="no-selection">← 請先選擇年級與週次，或選「單課教案」匯入自訂教案</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+/* ══ NAV ══ */
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
+  });
+});
+
+/* ══ TIMER ══ */
+const CIRCUMFERENCE = 2 * Math.PI * 136;
+let timerTotal = 0, timerLeft = 0, timerRunning = false, timerInterval = null;
+const arc = document.getElementById('arc');
+const digitsEl = document.getElementById('timer-digits');
+const labelEl  = document.getElementById('timer-label');
+const playBtn  = document.getElementById('play-btn');
+const doneBanner = document.getElementById('timer-done-banner');
+
+function setTimer(seconds) {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerTotal = seconds;
+  timerLeft  = seconds;
+  doneBanner.style.display = 'none';
+  playBtn.textContent = '▶';
+  arc.classList.remove('warning','danger');
+  arc.style.stroke = '';
+  updateTimerDisplay();
+  updateArc();
+  labelEl.textContent = formatLabel(timerTotal);
+}
+
+function formatLabel(s) {
+  const m = Math.floor(s / 60);
+  return m + ' 分鐘 / ' + m + ' min';
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timerLeft / 60);
+  const s = timerLeft % 60;
+  digitsEl.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+function updateArc() {
+  const pct = timerTotal > 0 ? timerLeft / timerTotal : 1;
+  arc.style.strokeDashoffset = CIRCUMFERENCE * (1 - pct);
+  arc.classList.remove('warning','danger');
+  if (pct <= 0.1) arc.classList.add('danger');
+  else if (pct <= 0.25) arc.classList.add('warning');
+}
+
+function toggleTimer() {
+  if (timerLeft === 0 && !timerRunning) return;
+  timerRunning = !timerRunning;
+  playBtn.textContent = timerRunning ? '⏸' : '▶';
+  if (timerRunning) {
+    labelEl.textContent = '進行中 / Running';
+    timerInterval = setInterval(tick, 1000);
+  } else {
+    labelEl.textContent = '暫停 / Paused';
+    clearInterval(timerInterval);
+  }
+}
+
+function tick() {
+  if (timerLeft > 0) {
+    timerLeft--;
+    updateTimerDisplay();
+    updateArc();
+  }
+  if (timerLeft === 0) {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    playBtn.textContent = '▶';
+    labelEl.textContent = '時間到！ / Time\'s up!';
+    arc.classList.add('danger');
+    doneBanner.style.display = 'block';
+    // quick flash
+    let f = 0;
+    const fl = setInterval(() => {
+      digitsEl.style.opacity = f % 2 === 0 ? '0.3' : '1';
+      if (++f > 8) { clearInterval(fl); digitsEl.style.opacity = '1'; }
+    }, 400);
+  }
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerLeft = timerTotal;
+  playBtn.textContent = '▶';
+  doneBanner.style.display = 'none';
+  arc.classList.remove('warning','danger');
+  labelEl.textContent = timerTotal > 0 ? formatLabel(timerTotal) : '準備開始 / Ready';
+  updateTimerDisplay();
+  updateArc();
+}
+
+function addMinute() {
+  timerTotal += 60;
+  timerLeft  += 60;
+  updateTimerDisplay();
+  updateArc();
+  if (!timerRunning) labelEl.textContent = formatLabel(timerTotal);
+}
+
+function setCustom() {
+  const v = parseInt(document.getElementById('custom-min').value);
+  if (v > 0) {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('selected'));
+    setTimer(v * 60);
+  }
+}
+
+document.querySelectorAll('.preset-btn[data-min]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    setTimer(parseInt(btn.dataset.min) * 60);
+  });
+});
+
+/* ══ TRAFFIC LIGHT ══ */
+const lights = { red: null, yellow: null, green: null };
+const msgs = {
+  red:    { zh: '🔴 請安靜！', en: 'Quiet please — silent work time' },
+  yellow: { zh: '🟡 小聲討論', en: 'Soft voices — partner talk OK' },
+  green:  { zh: '🟢 自由討論！', en: 'Free discussion — share your ideas!' },
+};
+
+function setLight(color) {
+  ['red','yellow','green'].forEach(c => {
+    document.getElementById('b-' + c).classList.remove('lit');
+  });
+  document.getElementById('b-' + color).classList.add('lit');
+  const msgEl = document.getElementById('traffic-msg');
+  msgEl.className = 'traffic-message ' + color;
+  document.getElementById('msg-zh').textContent = msgs[color].zh;
+  document.getElementById('msg-en').textContent = msgs[color].en;
+}
+
+/* ══ AGENDA ══ */
+let agendaItems = [];
+
+function renderAgenda() {
+  const ul = document.getElementById('agenda-list');
+  ul.innerHTML = '';
+  agendaItems.forEach((item, i) => {
+    const li = document.createElement('li');
+    li.className = 'agenda-item' + (item.done ? ' done' : '');
+    li.innerHTML = `
+      <div class="agenda-number">${i + 1}.</div>
+      <div class="agenda-check ${item.done ? 'checked' : ''}" onclick="toggleAgenda(${i})"></div>
+      <div class="agenda-text">${escapeHtml(item.text)}</div>
+      <button class="agenda-del" onclick="deleteAgenda(${i})" title="刪除">✕</button>
+    `;
+    ul.appendChild(li);
+  });
+  const done = agendaItems.filter(a => a.done).length;
+  const total = agendaItems.length;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  document.getElementById('agenda-bar').style.width = pct + '%';
+  document.getElementById('agenda-pct').textContent = done + ' / ' + total + ' (' + pct + '%)';
+}
+
+function addAgendaItem() {
+  const inp = document.getElementById('agenda-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  agendaItems.push({ text, done: false });
+  inp.value = '';
+  renderAgenda();
+}
+
+function toggleAgenda(i) {
+  agendaItems[i].done = !agendaItems[i].done;
+  renderAgenda();
+}
+
+function deleteAgenda(i) {
+  agendaItems.splice(i, 1);
+  renderAgenda();
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Week 6 SEL 40-min condensed lesson: 社會覺察 ─ 放大鏡視角
+[
+  '🌅 Check-in 簽到（5 分鐘）｜今天心情幾度？一人一句，圍圈開場',
+  '🔍 入場券：仔細觀察（5 分鐘）｜站起來→跳起來看天花板，體驗「放大鏡」的比喻',
+  '🖼️ 偵探視角：情境圖討論（8 分鐘）｜看投影片，用放大鏡找出圖中角色的感受與需求',
+  '📖 故事朗讀 + 討論：一罐蠟筆（12 分鐘）｜朗讀故事→小馬為何生氣？章魚的視角是什麼？我們可以怎麼做？',
+  '✍️ 出場券（5 分鐘）｜「用放大鏡，我學會了＿＿；下次我可以＿＿」',
+  '⭕ 圍圈收尾（5 分鐘）｜每人一句話，圍圈結束'
+].forEach(t => agendaItems.push({ text: t, done: false }));
+renderAgenda();
+
+/* ══ RANDOM PICKER ══ */
+let roster = [], pickedSet = new Set();
+
+function loadRoster() {
+  const raw = document.getElementById('roster-input').value;
+  roster = raw.split('\n').map(s => s.trim()).filter(Boolean);
+  pickedSet.clear();
+  renderChips();
+  document.getElementById('picker-result').textContent = '—';
+  document.getElementById('picker-sub').textContent = roster.length + ' 位學生 / ' + roster.length + ' students';
+}
+
+function renderChips() {
+  const wrap = document.getElementById('name-chips');
+  wrap.innerHTML = '';
+  roster.forEach((name, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'name-chip' + (pickedSet.has(i) ? ' picked' : '');
+    chip.innerHTML = escapeHtml(name) + `<button class="chip-del" onclick="removeFromRoster(${i})">✕</button>`;
+    wrap.appendChild(chip);
+  });
+}
+
+function removeFromRoster(i) {
+  roster.splice(i, 1);
+  pickedSet.clear();
+  renderChips();
+}
+
+function clearRoster() {
+  roster = [];
+  pickedSet.clear();
+  document.getElementById('roster-input').value = '';
+  document.getElementById('name-chips').innerHTML = '';
+  document.getElementById('picker-result').textContent = '—';
+  document.getElementById('picker-sub').textContent = '請輸入名單 / Enter names';
+}
+
+function pickRandom() {
+  if (roster.length === 0) {
+    document.getElementById('picker-result').textContent = '?';
+    document.getElementById('picker-sub').textContent = '請先載入名單 / Load names first';
+    return;
+  }
+  const unpicked = roster.map((_,i) => i).filter(i => !pickedSet.has(i));
+  if (unpicked.length === 0) {
+    document.getElementById('picker-sub').textContent = '所有人都被點到了！/ Everyone has been picked!';
+    return;
+  }
+  // Spin animation
+  const resultEl = document.getElementById('picker-result');
+  let spins = 0;
+  const maxSpins = 14;
+  const interval = setInterval(() => {
+    const ri = roster[Math.floor(Math.random() * roster.length)];
+    resultEl.textContent = ri;
+    resultEl.style.opacity = '0.7';
+    if (++spins >= maxSpins) {
+      clearInterval(interval);
+      const picked = unpicked[Math.floor(Math.random() * unpicked.length)];
+      resultEl.textContent = roster[picked];
+      resultEl.style.opacity = '1';
+      pickedSet.add(picked);
+      document.getElementById('picker-sub').textContent =
+        '已點 / Picked: ' + pickedSet.size + ' / ' + roster.length;
+      renderChips();
+    }
+  }, 80);
+}
+
+function resetPicks() {
+  pickedSet.clear();
+  document.getElementById('picker-result').textContent = '—';
+  document.getElementById('picker-sub').textContent = roster.length + ' 位學生 / ' + roster.length + ' students';
+  renderChips();
+}
+
+/* ══ LESSON LIBRARY ══ */
+const WEEK_ZH = ['一','二','三','四','五','六','七','八','九','十'];
+const THEME_ICON    = { '自我覺察':'🔎','自我管理':'🧘','社會覺察':'👁','關係技巧':'🤝','負責任的決定':'⚖️' };
+const THEME_CHECKIN = {
+  '自我覺察': [
+    '情緒溫度計：用一個詞描述現在的感受，心情幾度？',
+    '今天走進教室時，你的身體有什麼感覺？說說看',
+    '如果你現在是一種天氣，你是什麼天氣？為什麼？'
+  ],
+  '自我管理': [
+    '最近你用什麼方法讓自己冷靜？分享一個小訣竅',
+    '當你感到難受或生氣時，你通常會怎麼做？',
+    '想一個讓你覺得安心的畫面，用一句話描述給大家聽'
+  ],
+  '社會覺察': [
+    '今天你有注意到身邊的人嗎？說說你觀察到什麼',
+    '最近有沒有看到別人幫助別人的畫面？那是什麼場景？',
+    '你覺得今天班上的氣氛怎麼樣？用一個詞來形容'
+  ],
+  '關係技巧': [
+    '最近和朋友互動，有讓你印象深刻的時刻嗎？',
+    '你最近對誰說過「謝謝」或「對不起」？因為什麼事？',
+    '和朋友意見不同時，你通常怎麼處理？'
+  ],
+  '負責任的決定': [
+    '上週你做了一個讓自己感到負責任的決定是什麼？',
+    '你最近遇到一個需要做選擇的時刻，你怎麼決定的？',
+    '「負責任」對你來說是什麼感覺？用一個詞說說看'
+  ]
+};
+const THEME_EXIT    = {
+  '自我覺察':    '今天我發現自己的＿＿；我想對自己說＿＿',
+  '自我管理':    '下次情緒來時，我會試著＿＿',
+  '社會覺察':    '用放大鏡，我看見了＿＿；我可以＿＿',
+  '關係技巧':    '我學到了＿＿；我想對身邊的人說＿＿',
+  '負責任的決定':'我承諾這週我會＿＿'
+};
+const THEME_CIRCLE  = {
+  '自我覺察': [
+    '一人一句：「今天我發現了自己的＿＿」',
+    '一人一句：「當我感到＿＿時，我的身體會＿＿」',
+    '一人一句：「我想給自己一個鼓勵，因為＿＿」'
+  ],
+  '自我管理': [
+    '一人一句：「情緒來時，我可以＿＿」',
+    '一人一句：「今天我學到一個讓自己冷靜的方法是＿＿」',
+    '一人一句：「下次我遇到困難情緒，我打算＿＿」'
+  ],
+  '社會覺察': [
+    '一人一句：「用放大鏡，我看見了＿＿」',
+    '一人一句：「今天我注意到身邊有人＿＿，我感受到＿＿」',
+    '一人一句：「如果我是那個人，我希望別人＿＿」'
+  ],
+  '關係技巧': [
+    '一人一句：「我想對＿＿說，謝謝你＿＿」',
+    '一人一句：「今天練習溝通，讓我發現＿＿」',
+    '一人一句：「和朋友相處，我想改善的一件事是＿＿」'
+  ],
+  '負責任的決定': [
+    '一人一句：「我這週的承諾是＿＿」',
+    '一人一句：「做負責任的決定，讓我覺得＿＿」',
+    '一人一句：「如果重來，我會選擇＿＿因為＿＿」'
+  ]
+};
+const WEEKS_INFO = [
+  {w:1,date:'03/02–03/06'},{w:2,date:'03/09–03/13'},{w:3,date:'03/16–03/20'},
+  {w:4,date:'03/23–03/27'},{w:5,date:'03/30–04/03'},{w:6,date:'05/04–05/08'},
+  {w:7,date:'05/11–05/15'},{w:8,date:'05/18–05/22'},{w:9,date:'05/25–05/29'},
+  {w:10,date:'06/01–06/05'}
+];
+
+const lessonDB = {
+  1: { teacher:'蔡幸華', cls:'一甲', weeks:[
+    {theme:'自我覺察', title:'認識生氣與情緒管理', docId:'11WAEZ7nERhxCk3g4F0b8yMsnY6CXoI4RbvRurDp9l5U'},
+    {theme:'自我覺察', title:'情緒六精靈',         docId:'1IRwVyNVPnGfK3KACu_lU_E8LJS2m1JtZifw2qT9oA8A'},
+    {theme:'自我管理', title:'感受紅綠燈',         docId:'1jChRECwFyTShDjLJrksankcCUW3lmSop6CWhgSecTNo'},
+    {theme:'自我管理', title:'毛毛蟲慢慢走',       docId:'16Hh3lQQSvi-9-_1nEW_fkQfwixhjYNnX17T6K9nqfn8'},
+    {theme:'社會覺察', title:'不同的劇本',         docId:'1JNvx8UJzf7H_p3iIbx0_kzRIsBVJx8VCIX8g40dTyEQ'},
+    {theme:'社會覺察', title:'放大鏡視角',         docId:'1hGZFRognUorolMOGrZfY1_6D87hik9w2in5GCnKst0M'},
+    {theme:'關係技巧', title:'',                   docId:'1tOBGTPzow-Wybi9AKXo62tcO5R7CLJciBIu7cXtBzls'},
+    {theme:'關係技巧', title:'',                   docId:'12PwPpHAwtP8lIUEqw0bIVi3oMvzatIzTEpFl-OX_MFA'},
+    {theme:'負責任的決定', title:'',               docId:'1l37knZL7ouuJqYRQuCYPPidETaYhpEM-q4NZydOld8A'},
+    {theme:'負責任的決定', title:'',               docId:'13c67pW3MB1OKFmuYnwk5NpZc7f_ULCn5VYiEhLOKlcg'}
+  ]},
+  2: { teacher:'楊凱棋', cls:'二甲', weeks:[
+    {theme:'自我覺察', title:'情緒六精靈',   docId:'1MHdvLrNCGTZ0_jNfSkJYd6f-4Wgp9ee1WxZU3I6Pc7k'},
+    {theme:'自我覺察', title:'憤怒量表',     docId:'1-5loM4G-iKoUDDHUb217L1tr4pmGpPGgv_qUlyWQYdI'},
+    {theme:'自我管理', title:'河豚帕菲',     docId:'13mF6DiUou4wJzk7NGUezxz3YJ4qdmAFhmun0ugTMpno'},
+    {theme:'自我管理', title:'節節進步',     docId:'1ajPQc6mkWFUtDgLMVav6PIPh-a_aURV-a3xa-CU02-8'},
+    {theme:'社會覺察', title:'不同的劇本',   docId:'1s2qApkfEs8xVa-xEUXQobpWPf0I4XX9GWRDmfCpqCbE'},
+    {theme:'社會覺察', title:'',             docId:'18o_WENEfWSWIEFeOck0ikzrqLGk5bBTPkzhjXr84FoI'},
+    {theme:'關係技巧', title:'',             docId:'1TCCk3hM9FSpM4ZInLQ4EeTuIfEaxRVqhCUdy1RAwClU'},
+    {theme:'關係技巧', title:'',             docId:'1qC3z4AZJvU8okxrAlDO6VJYfxekE000nSZEWmmSv5O0'},
+    {theme:'負責任的決定', title:'',         docId:'156EhKv11VDS3OBNLlpYRvP5FIrQx65ztIglc9ee4o2o'},
+    {theme:'負責任的決定', title:'',         docId:'1kCEtEl9Z7gTGXRT68BdnEtTvRV42Hm4lWd3t2AOSCPk'}
+  ]},
+  3: { teacher:'黃于玲', cls:'三甲', weeks:[
+    {theme:'自我覺察', title:'我腦中的其他想法', docId:'1fEU0LKYs82_hylxmrsNzB1KeYxx3fkvWgCa7auQZfr8'},
+    {theme:'自我覺察', title:'這就是我',         docId:'19xBuVNnJvJepbWHmmLphIeN5RU5CHFZxtQ71HNw46Qo'},
+    {theme:'自我管理', title:'情緒在大腦旅行',   docId:'1UkyQPw79MYine_wBh6iJvWWZ98IOT9HcnQK7WN6J4WQ'},
+    {theme:'自我管理', title:'與憤怒對話',       docId:'1dAfkACFXpshEn7KogANzuQXww1k76cUNoPpf2Gq4Mjk'},
+    {theme:'社會覺察', title:'行程當中的衝突',   docId:'1KNoNrJ66glye4P50b37Ni6CxoeTW4GdiqIhlk9s1LrQ'},
+    {theme:'社會覺察', title:'別人怎麼了？',     docId:'1HBmBqcd0SQAYHJ_iGDr-L_l5fXBsMn3vWK8CPU4grvU'},
+    {theme:'關係技巧', title:'打氣三部曲',       docId:'1YcA7SM2tMGJQUAdlVJ3FzLZc19hgJ54tduwZeHFNedI'},
+    {theme:'關係技巧', title:'練習創造雙贏',     docId:'1hkgCW0NuQZiZSmLQyZ1uXxdN_xlyDy6Q1N2O5u4f2fo'},
+    {theme:'負責任的決定', title:'我這週的目標', docId:'1W5Mt9YPozRfW2XCEj4AHZ80e9ya8fLpIrLL_53-p2-0'},
+    {theme:'負責任的決定', title:'我會負責任',   docId:'1n02nfWcARcwONdv2Fj8q9Q44V92fDRkAuRuWGudJdOI'}
+  ]},
+  4: { teacher:'王瑞明', cls:'四甲', weeks:[
+    {theme:'自我覺察', title:'我的成長與學習',       docId:'1t07AYUxqhwWPLo6E4k2-RKqI_cLlwCupxRoDSDFTNE0'},
+    {theme:'自我覺察', title:'我能察覺自己的情緒',   docId:'1t-cP3VaviKQUXyYBsYbXmex_KBmQWaQ5NVLsEU0eYoc'},
+    {theme:'自我管理', title:'透過情緒調節運動身體', docId:'1iJRsLtEeP2D-DHEXmjywUyQch6STV_xNB3NFyBh-IaM'},
+    {theme:'自我管理', title:'情緒在大腦旅行',       docId:'1dN-ODKBmCHrOktwZ_YnJc7fN5xtt8saFfKU4PND6-Jw'},
+    {theme:'社會覺察', title:'愛分享的蝴蝶',         docId:'1VjLYwQ1Whn5SOjsIr69RkJn5jtR7mX9v1iz8lWeh-Fw'},
+    {theme:'社會覺察', title:'愛分享的蝴蝶（續）',   docId:'1VjLYwQ1Whn5SOjsIr69RkJn5jtR7mX9v1iz8lWeh-Fw'},
+    {theme:'關係技巧', title:'',                     docId:'1w0EqMCqp5FFMvFVvCnPmYDlOEtcowQUovb0szMXv0pc'},
+    {theme:'關係技巧', title:'',                     docId:'1QFuuKh_gWp8gxnd2nlpbaXO0zwUjrRjEziQHv0yD1vw'},
+    {theme:'負責任的決定', title:'',                 docId:'1vRI8w86vU8MLFYsqTj3l6oXaB5UCNof3IItPlXyBw_4'},
+    {theme:'負責任的決定', title:'',                 docId:'1lvKM3vPAGvdT69U7bQqCWXekw7ACutZEpft2D6bLW1Y'}
+  ]},
+  5: { teacher:'王怡文', cls:'五甲', weeks:[
+    {theme:'自我覺察', title:'優點大配對',             docId:'1DMGkzXzgim7T3BGj5Fl0OLO1IkLdXPZi2-ZVTpKYPeY'},
+    {theme:'自我覺察', title:'別人眼中的我・言語的力量',docId:'1xdDommUMlaV4s79i-uvGwn9-OD7vh4hsBCVae9-pRIA'},
+    {theme:'自我管理', title:'愛分享的蝴蝶',           docId:'12mIUv_rtCoUn7nWd5ppR3R3MXLL2ndVyV-E63vT4kro'},
+    {theme:'自我管理', title:'情緒紅綠燈',             docId:'1bWMUrs4haPnBxVcu1OS1p8XURXN8fZdnnxlgGL5clNo'},
+    {theme:'社會覺察', title:'失落的時刻',             docId:'1Vb_7SaJYb0f_-aAwNgaDxdhfsA2NM1cfqvNFYURaMcc'},
+    {theme:'社會覺察', title:'',                       docId:'1q3rILYizjxVLURXZqCZjktgQBshdH7bGBVmY_4YzHMs'},
+    {theme:'關係技巧', title:'',                       docId:'1gnAR0gU9w81T_zCoA5W3ozw4VIe4cdGLsqe-G9NVKSE'},
+    {theme:'關係技巧', title:'',                       docId:'1BVTCe_8qKzXdXfWDQDEgzBp_oevWM5jtmVtrVZmS9N4'},
+    {theme:'負責任的決定', title:'',                   docId:'1Dxjv0_YuCGIGsB-xXZO93scHoBX_Asl_-iyaoJNKa1Q'},
+    {theme:'負責任的決定', title:'',                   docId:'1-ih1199on7Xj6gGIF0MKLEDTaqI0UDfIbPux1uNd024'}
+  ]},
+  6: { teacher:'吳惠雅', cls:'六甲', weeks:[
+    {theme:'自我覺察', title:'覺察自己的情緒（呼吸放鬆）', docId:'17-4SYfWOphpJyVq9kErciIPqPeOxSOZs4bXr6yvV9W8'},
+    {theme:'自我覺察', title:'我的情緒環',               docId:'1fT41iWmaEjy5hai9bt09ueuCIJho9cPSoGen0HBROx8'},
+    {theme:'自我管理', title:'情緒寶盒',                 docId:'1KGNOQYwSgi2HsRw6hZ5njeh7JcdYU2PcKYn1-GNFEUY'},
+    {theme:'自我管理', title:'畢業旅行中的自我管理',     docId:'1Iowj9edY0sEwCyaH2g3-AMSugGtBK32-Ygf9CJgPh2A'},
+    {theme:'社會覺察', title:'',                         docId:'19yCIJgH_fBSV08K_yXmP7XLqn4dtXcX3zNX4k-tKXFU'},
+    {theme:'社會覺察', title:'',                         docId:'1n0upy3RwoV4jhyddyV9mIrnAK6PhSguSxo3PP2lZUak'},
+    {theme:'關係技巧', title:'',                         docId:'1Ij0xDBTolvPKKzVx73CTYDhMS_a0QxNfPW-kHOzupSY'},
+    {theme:'關係技巧', title:'',                         docId:'14bbbIe2Jac9iMmDJEd90oT-JCmyGJ1Qvy3BNIhlW8-w'},
+    {theme:'負責任的決定', title:'',                     docId:'1_i7hNZDMJeYjM0XpVSX0yUELd5YIzgeO9GaM3KVn8MA'},
+    {theme:'負責任的決定', title:'',                     docId:'1WzQz6TYw3wQytGp0uDACxRIu39bgHkKgh5U-Kep0VjQ'}
+  ]}
+};
+
+// ── Per-lesson activity menus (specific lessons override theme defaults) ──
+const LESSON_ACTIVITIES = {
+  '1_6': [ // 一年級 W6：放大鏡視角
+    {id:'l1', label:'🔍 入場券：仔細觀察',     desc:'站起來→跳起來看天花板，感受「放大鏡」比喻', time:5, on:true},
+    {id:'l2', label:'🖼️ 偵探視角：情境圖討論', desc:'播放投影片，用放大鏡找出角色的感受與需求',   time:8, on:true},
+    {id:'l3', label:'📖 故事朗讀：一罐蠟筆',   desc:'小馬與章魚的故事，建立換位思考情境',         time:7, on:true},
+    {id:'l4', label:'💬 故事討論三問',          desc:'小馬為何生氣？章魚怎麼想？如何解決？',       time:5, on:true},
+    {id:'l5', label:'🎭 角色扮演：解決方案',    desc:'兩兩一組，練習用放大鏡化解衝突',             time:8, on:false},
+    {id:'l6', label:'✍️ 出場券書寫',            desc:'用放大鏡，我看見了＿＿；我可以＿＿',         time:5, on:true}
+  ]
+};
+
+// ── Theme-based default activity menus ──
+const THEME_ACTIVITIES = {
+  '自我覺察': [
+    {id:'sa1', label:'🎯 入場券：情緒命名',       desc:'用一個詞命名現在的情緒，說說原因',         time:5,  on:true},
+    {id:'sa2', label:'🃏 情緒圖卡辨識',           desc:'圖卡命名情緒，辨識細膩情緒差異',           time:8,  on:false},
+    {id:'sa3', label:'📖 教案主要活動',           desc:'本週教案核心體驗與引導',                   time:15, on:true,
+     steps:['引入概念（故事朗讀／情緒圖卡展示）','個人體驗：命名自己的情緒，說說原因','引導討論：你在什麼情況下會有這個感覺？','連結生活：你可以怎麼善用對自己的了解？']},
+    {id:'sa4', label:'🎭 情境模擬討論',           desc:'呈現情境，討論自己的情緒反應',             time:8,  on:false},
+    {id:'sa5', label:'👥 小組分享',               desc:'3–4人一組，分享個人情緒體驗',             time:7,  on:true},
+    {id:'sa6', label:'✍️ 出場券書寫',             desc:'今天我發現自己的＿＿；我想對自己說＿＿', time:5,  on:true}
+  ],
+  '自我管理': [
+    {id:'sm1', label:'🧘 暖身：呼吸／身體掃描',  desc:'深呼吸或肌肉放鬆，安定身心',               time:5,  on:false},
+    {id:'sm2', label:'🎯 入場券：策略分享',       desc:'我最近用過的冷靜方法是…',                 time:5,  on:true},
+    {id:'sm3', label:'📖 教案主要活動',           desc:'本週教案核心體驗與引導',                   time:15, on:true,
+     steps:['引入情緒調節概念（繪本／情境卡）','體驗活動：練習呼吸／身體掃描／暫停策略','討論：哪些情況最難冷靜？什麼策略最有效？','訂定個人承諾：下次情緒來時我要＿＿']},
+    {id:'sm4', label:'🎭 角色扮演練習',           desc:'模擬情境，練習調節策略',                   time:8,  on:false},
+    {id:'sm5', label:'👥 小組分享',               desc:'3–4人一組，分享調節策略心得',             time:7,  on:true},
+    {id:'sm6', label:'✍️ 出場券書寫',             desc:'下次情緒來時，我會試著＿＿',             time:5,  on:true}
+  ],
+  '社會覺察': [
+    {id:'sc1', label:'🔍 入場券：觀察力練習',     desc:'仔細觀察圖片/環境，說說你發現什麼',       time:5,  on:true},
+    {id:'sc2', label:'🖼️ 情境圖片討論',           desc:'觀察圖中角色的感受與需求',                 time:8,  on:true},
+    {id:'sc3', label:'📖 教案主要活動',           desc:'本週教案核心故事／體驗',                   time:12, on:true,
+     steps:['展示情境圖／故事，引導仔細觀察','提問：這個人可能在想什麼？感受是什麼？','換位思考：如果你是他，你會怎麼做？','討論：生活中何時需要用「放大鏡」？']},
+    {id:'sc4', label:'🎭 換位思考角色扮演',       desc:'扮演不同角色，體驗他人視角',               time:8,  on:false},
+    {id:'sc5', label:'👥 小組討論',               desc:'如果你是故事中的角色，你會怎麼做？',       time:5,  on:true},
+    {id:'sc6', label:'✍️ 出場券書寫',             desc:'用放大鏡，我看見了＿＿；我可以＿＿',     time:5,  on:true}
+  ],
+  '關係技巧': [
+    {id:'rs1', label:'🎯 入場券：關係溫度計',     desc:'和朋友／家人的關係最近幾度？',             time:5,  on:true},
+    {id:'rs2', label:'🗣️ 溝通技巧介紹',           desc:'三明治說話法或主動傾聽技巧',               time:8,  on:false},
+    {id:'rs3', label:'📖 教案主要活動',           desc:'本週教案核心體驗與引導',                   time:15, on:true,
+     steps:['介紹本週溝通技巧（三明治說話法／主動傾聽）','示範對話情境，請學生觀察關鍵動作','兩兩練習：運用新技巧進行對話','全班反思：哪個技巧最難做到？為什麼？']},
+    {id:'rs4', label:'🎭 對話練習（兩兩一組）',   desc:'練習用新技巧和夥伴對話',                   time:8,  on:true},
+    {id:'rs5', label:'👥 全班分享',               desc:'各組分享練習心得',                         time:5,  on:false},
+    {id:'rs6', label:'✍️ 出場券書寫',             desc:'我學到了＿＿；我想對身邊的人說＿＿',     time:5,  on:true}
+  ],
+  '負責任的決定': [
+    {id:'rd1', label:'🎯 入場券：決定回顧',       desc:'上週你做了一個讓自己驕傲的決定？',         time:5,  on:true},
+    {id:'rd2', label:'⚖️ 情境分析討論',           desc:'呈現情境，討論不同選擇的後果',             time:8,  on:true},
+    {id:'rd3', label:'📖 教案主要活動',           desc:'本週教案核心體驗與引導',                   time:12, on:true,
+     steps:['呈現兩難情境，請學生思考各種選擇','分析選擇的後果：對自己？對別人？','介紹決策步驟：停→想→選→負責','小組討論：你會怎麼做？理由是什麼？']},
+    {id:'rd4', label:'🗺️ 決策步驟圖活動',         desc:'畫出面對困難決定的思考步驟',               time:8,  on:false, diagram:true},
+    {id:'rd5', label:'👥 小組共識討論',           desc:'練習尊重不同意見、尋找共識',               time:5,  on:false},
+    {id:'rd6', label:'✍️ 出場券＋個人承諾',       desc:'我承諾這週我會＿＿',                     time:5,  on:true}
+  ]
+};
+
+let selGrade = null, selWeek = null, currentActivities = [], selectedCIIdx = 0, selectedCLIdx = 0;
+
+function selectGrade(g) {
+  selGrade = g; selWeek = null;
+  document.querySelectorAll('#grade-btns .sel-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.grade === String(g));
+  });
+  const weekRow     = document.getElementById('week-row');
+  const importInline = document.getElementById('import-inline');
+  const weekBtns    = document.getElementById('week-btns');
+
+  if (g === 'custom') {
+    weekRow.style.display     = 'none';
+    importInline.style.display = 'block';
+    document.getElementById('lesson-display').innerHTML =
+      '<div class="no-selection">貼上教案後，點「分析教案」生成流程</div>';
+    document.getElementById('analyze-status').style.display = 'none';
+    return;
+  }
+
+  importInline.style.display = 'none';
+  weekRow.style.display = 'flex';
+  weekBtns.innerHTML = '';
+  const db = activeDB || lessonDB;
+  WEEKS_INFO.forEach(({w, date}) => {
+    const lesson = db[g] && db[g].weeks[w - 1];
+    const btn = document.createElement('button');
+    btn.className = 'sel-btn';
+    btn.dataset.week = w;
+    btn.innerHTML = `第${WEEK_ZH[w-1]}週<br><span style="font-size:0.7rem;color:#5a6090;">${date}</span>`;
+    if (lesson && lesson.theme) btn.title = lesson.theme + (lesson.title ? '・' + lesson.title : '');
+    btn.onclick = () => selectWeek(w);
+    weekBtns.appendChild(btn);
+  });
+  document.getElementById('lesson-display').innerHTML = '<div class="no-selection">← 請選擇週次</div>';
+}
+
+function selectWeek(w) {
+  selWeek = w;
+  document.querySelectorAll('#week-btns .sel-btn').forEach(b => b.classList.toggle('active', +b.dataset.week === w));
+  renderLesson(selGrade, w);
+}
+
+function renderLesson(g, w) {
+  const db     = activeDB || lessonDB;
+  const grade  = db[g];
+  const lesson = grade.weeks[w - 1];
+  const wInfo  = WEEKS_INFO[w - 1];
+  const title  = lesson.title || '（見教案連結）';
+  const docUrl = 'https://docs.google.com/document/d/' + lesson.docId + '/edit';
+  const ciOpts = THEME_CHECKIN[lesson.theme] || ['今天心情幾度？圍圈分享'];
+  const clOpts = THEME_CIRCLE[lesson.theme]  || ['一人一句，圓滿結束'];
+  selectedCIIdx = 0; selectedCLIdx = 0;
+
+  // Load activity options: lesson-specific or theme default
+  const src = LESSON_ACTIVITIES[g + '_' + w] || THEME_ACTIVITIES[lesson.theme] || [];
+  currentActivities = src.map(a => ({...a}));
+
+  document.getElementById('lesson-display').innerHTML = `
+    <div class="lesson-card">
+      <div>
+        <div class="lesson-title">${THEME_ICON[lesson.theme]||'📚'} ${escapeHtml(title)}</div>
+        <div class="lesson-meta">
+          <span class="badge badge-theme">${lesson.theme}</span>
+          <span class="badge badge-teacher">🏫 ${g} 年級</span>
+          <span class="badge badge-date">📅 第${WEEK_ZH[w-1]}週 ${wInfo.date}</span>
+        </div>
+      </div>
+
+      <div class="fixed-block fixed-checkin">
+        <div class="fixed-block-header">🌅 Check-in 簽到 <span class="time-badge">5 min ● 固定</span></div>
+        <div class="ci-options">
+          ${ciOpts.map((opt,i) => `<div class="ci-option${i===0?' active':''}" onclick="selectCI(${i},this)">\
+<span class="ci-num">${i+1}</span>${escapeHtml(opt)}</div>`).join('')}
+        </div>
+      </div>
+
+      <div>
+        <div class="act-select-header">
+          <div style="font-size:0.82rem;color:#7880b0;">
+            選擇課堂活動 <span style="color:#4a5080;">（勾選後拼出 30 分鐘主課）</span>
+          </div>
+          <div class="time-tracker">已選 <span class="time-fill" id="sel-time">0</span> / 30 min</div>
+        </div>
+        <div id="activity-list">
+          ${currentActivities.map((a,i) => actCard(a, i, g, w)).join('')}
+        </div>
+      </div>
+
+      <div class="fixed-block fixed-circle">
+        <div class="fixed-block-header">⭕ 圍圈收尾 <span class="time-badge">5 min ● 固定</span></div>
+        <div class="ci-options">
+          ${clOpts.map((opt,i) => `<div class="ci-option${i===0?' active':''}" onclick="selectCL(${i},this)">\
+<span class="ci-num">${i+1}</span>${escapeHtml(opt)}</div>`).join('')}
+        </div>
+      </div>
+
+      <div class="lesson-actions">
+        <button class="btn-load" onclick="loadLessonToAgenda(${g},${w})">📋 生成課堂流程 → 開始上課</button>
+        <a class="btn-doc" href="${docUrl}" target="_blank">📄 查看完整教案 ↗</a>
+      </div>
+    </div>`;
+  updateTimeTracker();
+}
+
+const DECISION_DIAGRAM_HTML = `
+<div class="decision-map">
+  <div class="dm-title">面對困難決定的思考步驟 Decision-Making Map</div>
+  <div style="text-align:center"><span class="dm-start">😰 遇到困難決定</span></div>
+  <div class="dm-flow">
+    <div class="dm-step">
+      <div class="dm-box dm-box-stop">🛑 停<br>Stop</div>
+      <div class="dm-sub">深呼吸<br>不要衝動行動</div>
+    </div>
+    <div class="dm-arrow">→</div>
+    <div class="dm-step">
+      <div class="dm-box dm-box-think">🤔 想<br>Think</div>
+      <div class="dm-branches">
+        <div class="dm-branch">選擇 A → 後果？</div>
+        <div class="dm-branch">選擇 B → 後果？</div>
+        <div class="dm-branch">選擇 C → 後果？</div>
+      </div>
+    </div>
+    <div class="dm-arrow">→</div>
+    <div class="dm-step">
+      <div class="dm-box dm-box-choose">✅ 選<br>Choose</div>
+      <div class="dm-sub">對自己好<br>也對別人好</div>
+    </div>
+    <div class="dm-arrow">→</div>
+    <div class="dm-step">
+      <div class="dm-box dm-box-own">💪 負責<br>Own It</div>
+      <div class="dm-sub">承擔結果<br>從錯誤中學習</div>
+    </div>
+  </div>
+</div>`;
+
+function actCard(a, i, g, w) {
+  const stepsHtml = a.steps
+    ? `<div class="act-steps">${a.steps.map(s=>`<div class="act-step">${escapeHtml(s)}</div>`).join('')}</div>`
+    : '';
+  const diagramHtml = (a.diagram && a.on) ? DECISION_DIAGRAM_HTML : '';
+  return `<div class="activity-card${a.on?' selected':''}" onclick="toggleActivity(${i},${g},${w})">
+    <div class="act-toggle${a.on?' on':''}"></div>
+    <div class="act-info">
+      <div class="act-name">${escapeHtml(a.label)}</div>
+      <div class="act-desc">${escapeHtml(a.desc)}</div>
+      ${stepsHtml}
+      ${diagramHtml}
+    </div>
+    <span class="act-time">${a.time} min</span>
+  </div>`;
+}
+
+function toggleActivity(i, g, w) {
+  currentActivities[i].on = !currentActivities[i].on;
+  document.getElementById('activity-list').innerHTML = currentActivities.map((a,j) => actCard(a, j, g, w)).join('');
+  updateTimeTracker();
+}
+
+function updateTimeTracker() {
+  const total = currentActivities.filter(a => a.on).reduce((s,a) => s + a.time, 0);
+  const el = document.getElementById('sel-time');
+  if (!el) return;
+  el.textContent = total;
+  el.style.color = total > 30 ? '#e05050' : total >= 25 ? '#5a8fcf' : '#8890c8';
+}
+
+function selectCI(idx, el) {
+  selectedCIIdx = idx;
+  el.closest('.ci-options').querySelectorAll('.ci-option').forEach((o, i) => {
+    o.classList.toggle('active', i === idx);
+  });
+}
+
+function selectCL(idx, el) {
+  selectedCLIdx = idx;
+  el.closest('.ci-options').querySelectorAll('.ci-option').forEach((o, i) => {
+    o.classList.toggle('active', i === idx);
+  });
+}
+
+function loadLessonToAgenda(g, w) {
+  const db      = activeDB || lessonDB;
+  const lesson  = db[g].weeks[w - 1];
+  const ciOpts  = THEME_CHECKIN[lesson.theme] || ['情緒溫度計，圍圈開場'];
+  const ci      = ciOpts[selectedCIIdx] || ciOpts[0];
+  const clOpts  = THEME_CIRCLE[lesson.theme]  || ['一人一句，圓滿結束'];
+  const cl      = clOpts[selectedCLIdx] || clOpts[0];
+  agendaItems = [
+    { text: '🌅 Check-in 簽到（5 分鐘）｜' + ci, done: false },
+    ...currentActivities.filter(a => a.on).map(a => ({
+      text: a.label + '（' + a.time + ' 分鐘）｜' + a.desc, done: false
+    })),
+    { text: '⭕ 圍圈收尾（5 分鐘）｜' + cl, done: false }
+  ];
+  renderAgenda();
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-agenda').classList.add('active');
+}
+
+// Wire radio buttons
+document.querySelectorAll('input[name="src-mode"]').forEach(r => r.addEventListener('change', () => {
+  document.getElementById('file-row').style.display = r.value==='file' ? '' : 'none';
+  document.getElementById('url-row').style.display  = r.value==='url'  ? '' : 'none';
+  document.getElementById('text-row').style.display = r.value==='text' ? '' : 'none';
+}));
+
+/* ══ FILE IMPORT ══ */
+let _fileText = '';   // holds last-read file content
+
+function handleFileDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) readLessonFile(file);
+}
+
+function handleFileSelect(input) {
+  const file = input.files[0];
+  if (file) readLessonFile(file);
+}
+
+function readLessonFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  const status = document.getElementById('analyze-status');
+  status.style.display = 'block';
+  status.className = 'analyze-status';
+  status.textContent = '⏳ 讀取檔案中…';
+
+  if (ext === 'txt') {
+    const reader = new FileReader();
+    reader.onload = e => { setFileLoaded(file.name, e.target.result); };
+    reader.readAsText(file, 'UTF-8');
+
+  } else if (ext === 'docx') {
+    // Load mammoth.js on demand
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js', () => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        mammoth.extractRawText({arrayBuffer: e.target.result})
+          .then(r => setFileLoaded(file.name, r.value))
+          .catch(() => showAnalyzeErr('無法解析 .docx，請改用「貼上文字」'));
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+  } else if (ext === 'pdf') {
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', () => {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const reader = new FileReader();
+      reader.onload = async e => {
+        try {
+          const pdf = await pdfjsLib.getDocument({data: e.target.result}).promise;
+          let text = '';
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            text += content.items.map(it => it.str).join(' ') + '\n';
+          }
+          setFileLoaded(file.name, text);
+        } catch { showAnalyzeErr('無法解析 PDF，請改用「貼上文字」'); }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+  } else {
+    showAnalyzeErr('不支援此檔案格式，請使用 .txt、.docx 或 .pdf');
+  }
+}
+
+function setFileLoaded(name, text) {
+  _fileText = text;
+  document.getElementById('file-name').textContent = name;
+  document.getElementById('file-loaded').style.display = 'block';
+  document.getElementById('drop-zone').querySelector('.drop-label').innerHTML =
+    `<strong style="color:#6aaa6a;">✓ ${escapeHtml(name)}</strong><br><span style="font-size:0.72rem;color:#5a7a5a;">已載入，點擊可換檔</span>`;
+  const s = document.getElementById('analyze-status');
+  s.className = 'analyze-status ok';
+  s.textContent = '✓ 檔案已讀取，點「分析教案」生成流程';
+}
+
+function loadScript(src, cb) {
+  if (document.querySelector(`script[src="${src}"]`)) { cb(); return; }
+  const s = document.createElement('script');
+  s.src = src; s.onload = cb; document.head.appendChild(s);
+
+}
+
+/* ══ LESSON ANALYSIS ══ */
+const THEME_KEYWORDS = {
+  '自我覺察':     ['情緒','感受','覺察','自我','心情','溫度計','認識','生氣','快樂','難過','命名','情緒環','情緒臉','情緒六'],
+  '自我管理':     ['管理','調節','控制','冷靜','呼吸','策略','紅綠燈','暫停','放鬆','憤怒','平靜','大腦','神經','情緒寶','河豚'],
+  '社會覺察':     ['觀察','他人','換位','同理','放大鏡','角色','看見','別人','偵探','視角','蠟筆','故事','社會','失落'],
+  '關係技巧':     ['關係','溝通','傾聽','合作','朋友','衝突','三明治','雙贏','說話','打氣','互動','道歉','謝謝','關心'],
+  '負責任的決定': ['決定','選擇','負責','後果','判斷','承擔','步驟','停想選','兩難','目標','承諾','責任']
+};
+
+function detectTheme(text) {
+  let best = '自我覺察', bestScore = -1;
+  for (const [theme, kws] of Object.entries(THEME_KEYWORDS)) {
+    const score = kws.reduce((n, k) => n + (text.includes(k) ? 1 : 0), 0);
+    if (score > bestScore) { bestScore = score; best = theme; }
+  }
+  return best;
+}
+
+function extractTitle(text) {
+  // Try to find a title-like line: short, near the top, no trailing period
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 1 && l.length < 60);
+  for (const ln of lines.slice(0, 10)) {
+    if (/[一-鿿]/.test(ln) && ln.length >= 3) return ln.replace(/^[#＃\s*●・]+/, '');
+  }
+  return '本週教案';
+}
+
+function extractActivities(text, theme) {
+  // If lesson text mentions specific activities, try to detect them
+  const found = [];
+  const actPhrases = [
+    ['故事','📖 故事朗讀'], ['繪本','📖 繪本共讀'], ['角色扮演','🎭 角色扮演'],
+    ['情境','🖼️ 情境討論'], ['圖卡','🃏 圖卡活動'], ['影片','🎬 影片觀賞'],
+    ['小組','👥 小組討論'], ['書寫','✍️ 出場券書寫'], ['畫','🎨 圖像表達'],
+    ['遊戲','🎮 遊戲體驗'], ['分享','🗣️ 全班分享'], ['練習','🔄 技巧練習']
+  ];
+  for (const [kw, label] of actPhrases) {
+    if (text.includes(kw) && found.length < 4) found.push(label);
+  }
+  return found;
+}
+
+async function fetchGoogleDoc(url) {
+  const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (!m) return null;
+  const exportUrl = 'https://docs.google.com/document/d/' + m[1] + '/export?format=txt';
+  try {
+    const res = await fetch(exportUrl, {mode:'cors'});
+    if (res.ok) return await res.text();
+  } catch(e) {}
+  return null;
+}
+
+/* ══ FOLDER CONFIG ══ */
+let activeDB = null;   // null = use built-in lessonDB
+
+function toggleFolderConfig() {
+  const el = document.getElementById('folder-config');
+  el.style.display = el.style.display === 'none' ? '' : 'none';
+}
+
+function onFolderInput() {
+  const v = document.getElementById('folder-url').value.trim();
+  document.getElementById('scan-btn').disabled = !v;
+}
+
+function useBuiltinDB() {
+  activeDB = null;
+  localStorage.removeItem('custom_lesson_db');
+  localStorage.removeItem('custom_year_label');
+  document.getElementById('lib-year-label').textContent = '辰光 114 下學期';
+  document.getElementById('folder-source-tag').textContent = '目前：114下（內建）';
+  document.getElementById('folder-source-tag').className = 'folder-source-tag';
+  resetGradeUI();
+  document.getElementById('folder-config').style.display = 'none';
+  appendLog('↩ 已回復內建 114下資料庫', 'info');
+}
+
+function resetGradeUI() {
+  selGrade = null; selWeek = null;
+  document.getElementById('week-row').style.display = 'none';
+  document.getElementById('import-inline').style.display = 'none';
+  document.getElementById('lesson-display').innerHTML = '<div class="no-selection">← 請先選擇年級與週次</div>';
+  document.querySelectorAll('#grade-btns .sel-btn').forEach(b => b.classList.remove('active'));
+}
+
+function appendLog(msg, type='info') {
+  const log = document.getElementById('scan-log');
+  log.style.display = '';
+  const span = document.createElement('div');
+  span.className = 'log-' + type;
+  span.textContent = msg;
+  log.appendChild(span);
+  log.scrollTop = log.scrollHeight;
+}
+
+function extractFolderId(url) {
+  let m = url.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  if (m) return m[1];
+  m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (m) return m[1];
+  // bare ID
+  if (/^[a-zA-Z0-9_-]{20,}$/.test(url.trim())) return url.trim();
+  return null;
+}
+
+async function listDriveFolder(folderId, apiKey) {
+  // Try with API key first, then anonymous
+  const base = `https://www.googleapis.com/drive/v3/files`;
+  const q    = encodeURIComponent(`'${folderId}' in parents and trashed=false`);
+  const fields = encodeURIComponent('files(id,name,mimeType,webContentLink)');
+  const keyParam = apiKey ? `&key=${encodeURIComponent(apiKey)}` : '';
+  const url = `${base}?q=${q}&fields=${fields}&pageSize=100${keyParam}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Drive API 錯誤 ' + res.status + '（需要 Drive API Key 或將資料夾設為公開）');
+  const data = await res.json();
+  return data.files || [];
+}
+
+async function fetchDocText(file) {
+  // Google Docs
+  if (file.mimeType === 'application/vnd.google-apps.document') {
+    const url = `https://docs.google.com/document/d/${file.id}/export?format=txt`;
+    const res = await fetch(url);
+    if (res.ok) return await res.text();
+    throw new Error('無法讀取 Google Doc');
+  }
+  // DOCX
+  if (file.mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      || file.name.endsWith('.docx')) {
+    const exportUrl = `https://docs.google.com/document/d/${file.id}/export?format=txt`;
+    const res = await fetch(exportUrl);
+    if (res.ok) return await res.text();
+    throw new Error('無法讀取 .docx');
+  }
+  // Plain text
+  if (file.mimeType === 'text/plain' || file.name.endsWith('.txt')) {
+    if (!file.webContentLink) throw new Error('無直接下載連結');
+    const res = await fetch(file.webContentLink);
+    if (res.ok) return await res.text();
+  }
+  throw new Error('不支援的檔案類型');
+}
+
+async function aiMapLesson(text, filename) {
+  // Heuristic fallback (no AI)
+  const theme = detectTheme(text + ' ' + filename);
+  const title = extractTitle(text) || filename.replace(/\.\w+$/, '');
+  let grade = null, week = null;
+  // Try to extract from filename: 1年級_W3, grade1_week3, 一年級第三週…
+  const gm = filename.match(/(\d)年級|grade\s*(\d)/i);
+  if (gm) grade = parseInt(gm[1] || gm[2]);
+  const wm = filename.match(/[Ww週](\d+)|第(\d+)週/);
+  if (wm) week = parseInt(wm[1] || wm[2]);
+  return { grade, week, theme, title };
+}
+
+async function aiMapLessonClaude(text, filename) {
+  const key = getApiKey();
+  if (!key) return aiMapLesson(text, filename);
+  const prompt = `分析以下教案（檔名：${filename}），以 JSON 格式回覆（只輸出 JSON）：
+{
+  "grade": 年級數字1-6（若無法判斷填 null）,
+  "week": 週次數字1-10（若無法判斷填 null）,
+  "theme": "自我覺察|自我管理|社會覺察|關係技巧|負責任的決定",
+  "title": "課程名稱（不超過20字）"
+}
+
+教案（節錄）：
+${text.substring(0, 3000)}`;
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({
+        model:'claude-haiku-4-5-20251001', max_tokens:256,
+        messages:[{role:'user', content:prompt}]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content?.[0]?.text || '';
+    const m = raw.match(/\{[\s\S]*?\}/);
+    if (m) return JSON.parse(m[0]);
+  } catch(e) {}
+  return aiMapLesson(text, filename);   // fallback
+}
+
+async function scanFolder() {
+  const btn     = document.getElementById('scan-btn');
+  const urlVal  = document.getElementById('folder-url').value.trim();
+  const apiKey  = document.getElementById('drive-api-key').value.trim();
+  const log     = document.getElementById('scan-log');
+  log.innerHTML = '';
+  log.style.display = '';
+  btn.disabled = true;
+
+  const folderId = extractFolderId(urlVal);
+  if (!folderId) {
+    appendLog('✗ 無法解析資料夾 ID，請貼上完整 Google Drive 資料夾網址', 'err');
+    btn.disabled = false; return;
+  }
+  appendLog(`📂 資料夾 ID：${folderId}`, 'info');
+
+  let files;
+  try {
+    appendLog('⏳ 列出檔案中…', 'info');
+    files = await listDriveFolder(folderId, apiKey);
+    appendLog(`✓ 找到 ${files.length} 個檔案`, 'ok');
+  } catch(e) {
+    appendLog('✗ ' + e.message, 'err');
+    appendLog('提示：請在 Google Cloud Console 啟用 Drive API 並取得 API Key，或將資料夾設為「任何人可檢視」', 'info');
+    btn.disabled = false; return;
+  }
+
+  if (!files.length) {
+    appendLog('資料夾內無可讀取的檔案', 'err');
+    btn.disabled = false; return;
+  }
+
+  // Build custom DB: { 1:{weeks:[...]}, 2:{weeks:[]}, ... }
+  const customDB = {};
+  for (let g = 1; g <= 6; g++) customDB[g] = { weeks: Array(10).fill(null).map(() => ({theme:'', title:'', docId:''})) };
+  let mapped = 0, failed = 0;
+
+  const useAI = !!getApiKey();
+  appendLog(useAI ? '✨ 使用 Claude AI 分析…' : '🔍 使用關鍵字分析（設定 API Key 可提升精準度）', 'info');
+
+  for (const file of files) {
+    const skip = !['application/vnd.google-apps.document',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'].includes(file.mimeType) &&
+      !file.name.match(/\.(docx?|txt)$/i);
+    if (skip) { appendLog(`⊘ 跳過：${file.name}`, 'info'); continue; }
+
+    appendLog(`⏳ 分析：${file.name}`, 'info');
+    try {
+      const text = await fetchDocText(file);
+      const info = await aiMapLessonClaude(text, file.name);
+      const g = info.grade, w = info.week;
+      if (g && w && g >= 1 && g <= 6 && w >= 1 && w <= 10) {
+        customDB[g].weeks[w - 1] = { theme: info.theme, title: info.title, docId: file.id };
+        appendLog(`  ✓ ${g}年級 第${w}週 ｜ ${info.theme}・${info.title}`, 'ok');
+        mapped++;
+      } else {
+        appendLog(`  ⚠ ${file.name}：無法判斷年級/週次`, 'info');
+        failed++;
+      }
+    } catch(e) {
+      appendLog(`  ✗ ${file.name}：${e.message}`, 'err');
+      failed++;
+    }
+  }
+
+  appendLog(`─────────────────`, 'info');
+  appendLog(`完成：${mapped} 份已對應，${failed} 份未能對應`, mapped > 0 ? 'ok' : 'err');
+
+  if (mapped === 0) { btn.disabled = false; return; }
+
+  // Use user-supplied label, or fall back to URL hint
+  const yearLabel = document.getElementById('folder-year-name').value.trim()
+    || (document.getElementById('folder-url').value.includes('115') ? '115下'
+      : document.getElementById('folder-url').value.includes('114') ? '114下' : '自訂學年度');
+
+  // Save and apply
+  localStorage.setItem('custom_lesson_db', JSON.stringify(customDB));
+  localStorage.setItem('custom_year_label', yearLabel);
+  applyCustomDB(customDB, yearLabel);
+  btn.disabled = false;
+}
+
+function applyCustomDB(db, yearLabel) {
+  activeDB = db;
+  document.getElementById('lib-year-label').textContent = yearLabel + '（自訂）';
+  document.getElementById('folder-source-tag').textContent = '目前：' + yearLabel + '（自訂資料夾）';
+  document.getElementById('folder-source-tag').className = 'folder-source-tag custom';
+  resetGradeUI();
+  appendLog('✅ 已套用，請選擇年級與週次！', 'ok');
+}
+
+// Auto-restore custom DB on page load
+(function restoreCustomDB() {
+  const saved = localStorage.getItem('custom_lesson_db');
+  const label = localStorage.getItem('custom_year_label');
+  if (saved) {
+    try {
+      applyCustomDB(JSON.parse(saved), label || '自訂');
+      const yn = document.getElementById('folder-year-name');
+      if (yn && label) yn.value = label;
+    } catch(e) {}
+  }
+})();
+
+/* ══ CLAUDE API KEY MANAGEMENT ══ */
+(function initKey() {
+  const k = localStorage.getItem('claude_api_key');
+  if (k) {
+    const inp = document.getElementById('claude-key');
+    if (inp) inp.value = k;
+    updateKeyBadge(true);
+  }
+})();
+
+function saveApiKey() {
+  const k = document.getElementById('claude-key').value.trim();
+  if (!k) { clearApiKey(); return; }
+  localStorage.setItem('claude_api_key', k);
+  updateKeyBadge(true);
+  document.getElementById('key-status').textContent = '✓ 已儲存，下次開啟自動載入';
+}
+function clearApiKey() {
+  localStorage.removeItem('claude_api_key');
+  document.getElementById('claude-key').value = '';
+  updateKeyBadge(false);
+  document.getElementById('key-status').textContent = '已清除';
+}
+function updateKeyBadge(on) {
+  const b = document.getElementById('ai-badge');
+  if (!b) return;
+  if (on) {
+    b.className = 'ai-on'; b.textContent = '✨ AI 分析已啟用';
+  } else {
+    b.className = ''; b.textContent = '⚙️ AI 分析設定（未設定 → 關鍵字模式）';
+  }
+}
+function getApiKey() { return localStorage.getItem('claude_api_key') || ''; }
+
+/* ══ CLAUDE API CALL ══ */
+async function callClaudeAPI(lessonText) {
+  const key = getApiKey();
+  if (!key) return null;
+
+  const prompt = `你是一位 SEL（社會情緒學習）課程助理。請分析以下教案，判斷核心主題並生成教學流程素材。
+
+請以 JSON 格式回覆，結構如下（只輸出 JSON，不要加任何說明文字）：
+{
+  "theme": "從以下五個之一選擇：自我覺察、自我管理、社會覺察、關係技巧、負責任的決定",
+  "title": "課程名稱（從教案提取，不超過25字）",
+  "checkin": [
+    "Check-in 題目選項1（15字以內，適合圍圈分享）",
+    "Check-in 題目選項2",
+    "Check-in 題目選項3"
+  ],
+  "activities": [
+    {"label": "活動名稱（含emoji，例：📖 故事朗讀）", "desc": "活動說明（20字以內）", "time": 分鐘數（整數）, "on": true或false},
+    ... （3到6個活動，加總約30分鐘）
+  ],
+  "circle": [
+    "圍圈收尾句子選項1（格式：一人一句：「＿＿」）",
+    "圍圈收尾句子選項2",
+    "圍圈收尾句子選項3"
+  ]
+}
+
+教案內容如下：
+---
+${lessonText.substring(0, 6000)}
+---`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || 'API 錯誤 ' + res.status);
+    }
+    const data = await res.json();
+    const raw = data.content?.[0]?.text || '';
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('AI 回傳格式異常');
+    return JSON.parse(jsonMatch[0]);
+  } catch(e) {
+    console.error('Claude API:', e);
+    throw e;
+  }
+}
+
+async function analyzeLesson() {
+  const btn = document.getElementById('analyze-btn');
+  const status = document.getElementById('analyze-status');
+  const mode = document.querySelector('input[name="src-mode"]:checked').value;
+  let text = '';
+
+  btn.disabled = true;
+  status.style.display = 'block';
+  status.className = 'analyze-status';
+  status.textContent = '⏳ 分析中…';
+
+  if (mode === 'file') {
+    if (!_fileText) { showAnalyzeErr('請先上傳教案檔案'); btn.disabled=false; return; }
+    text = _fileText;
+  } else if (mode === 'url') {
+    const url = document.getElementById('lesson-url').value.trim();
+    if (!url) { showAnalyzeErr('請輸入 Google Doc 網址'); btn.disabled=false; return; }
+    status.textContent = '⏳ 讀取文件中…';
+    text = await fetchGoogleDoc(url);
+    if (!text) { showAnalyzeErr('無法讀取文件，請確認文件設為「任何人可檢視」'); btn.disabled=false; return; }
+  } else {
+    text = document.getElementById('lesson-text').value.trim();
+    if (!text) { showAnalyzeErr('請貼上教案文字'); btn.disabled=false; return; }
+  }
+
+  const label = document.getElementById('year-label').value.trim() || '自訂教案';
+
+  // ── Try Claude API first ──
+  if (getApiKey()) {
+    status.textContent = '✨ 送交 AI 分析中…';
+    try {
+      const ai = await callClaudeAPI(text);
+      status.className = 'analyze-status ok';
+      status.textContent = '✨ AI 分析完成：' + (THEME_ICON[ai.theme]||'📚') + ' ' + ai.theme;
+      btn.disabled = false;
+      renderAILesson(ai, label);
+      return;
+    } catch(e) {
+      status.textContent = '⚠️ AI 分析失敗（' + e.message + '），改用關鍵字分析…';
+    }
+  }
+
+  // ── Fallback: keyword analysis ──
+  const theme  = detectTheme(text);
+  const title  = extractTitle(text);
+  const extras = extractActivities(text, theme);
+
+  status.className = 'analyze-status ok';
+  status.textContent = '✓ 偵測到主題：' + THEME_ICON[theme] + ' ' + theme;
+  btn.disabled = false;
+  renderImportedLesson(theme, title, label, extras);
+}
+
+function showAnalyzeErr(msg) {
+  const s = document.getElementById('analyze-status');
+  s.className = 'analyze-status err';
+  s.textContent = '✗ ' + msg;
+  s.style.display = 'block';
+}
+
+function renderImportedLesson(theme, title, label, extras) {
+  // Build activities: merge THEME_ACTIVITIES with any extras detected
+  const src = THEME_ACTIVITIES[theme] || [];
+  currentActivities = src.map(a => ({...a}));
+  // Inject detected extras as optional cards after the main activity
+  const mainIdx = currentActivities.findIndex(a => a.label.includes('教案主要活動'));
+  extras.forEach((lbl, i) => {
+    const extra = {id:'ext'+i, label:lbl, desc:'從教案偵測到的相關活動', time:7, on:false};
+    if (mainIdx >= 0) currentActivities.splice(mainIdx+1+i, 0, extra);
+    else currentActivities.push(extra);
+  });
+
+  selGrade = null; selWeek = null;
+  selectedCIIdx = 0; selectedCLIdx = 0;
+
+  const ciOpts = THEME_CHECKIN[theme] || ['今天心情幾度？'];
+  const clOpts = THEME_CIRCLE[theme]  || ['一人一句，圓滿結束'];
+  const docUrl = (document.querySelector('input[name="src-mode"]:checked').value === 'url')
+    ? document.getElementById('lesson-url').value.trim() : '';
+
+  document.getElementById('lesson-display').innerHTML = `
+    <div class="lesson-card">
+      <div>
+        <div class="lesson-title">${THEME_ICON[theme]||'📚'} ${escapeHtml(title)}</div>
+        <div class="lesson-meta">
+          <span class="badge badge-theme">${theme}</span>
+          <span class="badge badge-date">📁 ${escapeHtml(label)}</span>
+        </div>
+      </div>
+
+      <div class="fixed-block fixed-checkin">
+        <div class="fixed-block-header">🌅 Check-in 簽到 <span class="time-badge">5 min ● 固定</span></div>
+        <div class="ci-options">
+          ${ciOpts.map((opt,i)=>`<div class="ci-option${i===0?' active':''}" onclick="selectCI(${i},this)"><span class="ci-num">${i+1}</span>${escapeHtml(opt)}</div>`).join('')}
+        </div>
+      </div>
+
+      <div>
+        <div class="act-select-header">
+          <div style="font-size:0.82rem;color:#7880b0;">選擇課堂活動 <span style="color:#4a5080;">（勾選後拼出 30 分鐘主課）</span></div>
+          <div class="time-tracker">已選 <span class="time-fill" id="sel-time">0</span> / 30 min</div>
+        </div>
+        <div id="activity-list">
+          ${currentActivities.map((a,i)=>actCard(a,i,'imp',0)).join('')}
+        </div>
+      </div>
+
+      <div class="fixed-block fixed-circle">
+        <div class="fixed-block-header">⭕ 圍圈收尾 <span class="time-badge">5 min ● 固定</span></div>
+        <div class="ci-options">
+          ${clOpts.map((opt,i)=>`<div class="ci-option${i===0?' active':''}" onclick="selectCL(${i},this)"><span class="ci-num">${i+1}</span>${escapeHtml(opt)}</div>`).join('')}
+        </div>
+      </div>
+
+      <div class="lesson-actions">
+        <button class="btn-load" onclick="loadImportedToAgenda('${escapeHtml(theme)}')">📋 生成課堂流程 → 開始上課</button>
+        ${docUrl ? `<a class="btn-doc" href="${escapeHtml(docUrl)}" target="_blank">📄 查看完整教案 ↗</a>` : ''}
+      </div>
+    </div>`;
+  updateTimeTracker();
+}
+
+/* ── Render AI-generated lesson ── */
+function renderAILesson(ai, label) {
+  const theme = ai.theme;
+  currentActivities = (ai.activities || []).map((a, i) => ({
+    id: 'ai' + i, label: a.label, desc: a.desc,
+    time: a.time || 8, on: a.on !== false
+  }));
+  selectedCIIdx = 0; selectedCLIdx = 0;
+
+  const ciOpts = ai.checkin  || THEME_CHECKIN[theme] || ['今天心情幾度？'];
+  const clOpts = ai.circle   || THEME_CIRCLE[theme]  || ['一人一句，圓滿結束'];
+  const docUrl = (document.querySelector('input[name="src-mode"]:checked').value === 'url')
+    ? document.getElementById('lesson-url').value.trim() : '';
+
+  document.getElementById('lesson-display').innerHTML = `
+    <div class="lesson-card">
+      <div>
+        <div class="lesson-title">${THEME_ICON[theme]||'📚'} ${escapeHtml(ai.title||'本週教案')}</div>
+        <div class="lesson-meta">
+          <span class="badge badge-theme">${theme}</span>
+          <span class="badge badge-date">✨ AI 分析 ／ ${escapeHtml(label)}</span>
+        </div>
+      </div>
+      <div class="fixed-block fixed-checkin">
+        <div class="fixed-block-header">🌅 Check-in 簽到 <span class="time-badge">5 min ● 固定</span></div>
+        <div class="ci-options">
+          ${ciOpts.map((opt,i)=>`<div class="ci-option${i===0?' active':''}" onclick="selectCI(${i},this)"><span class="ci-num">${i+1}</span>${escapeHtml(opt)}</div>`).join('')}
+        </div>
+      </div>
+      <div>
+        <div class="act-select-header">
+          <div style="font-size:0.82rem;color:#7880b0;">選擇課堂活動 <span style="color:#4a5080;">（勾選後拼出 30 分鐘主課）</span></div>
+          <div class="time-tracker">已選 <span class="time-fill" id="sel-time">0</span> / 30 min</div>
+        </div>
+        <div id="activity-list">
+          ${currentActivities.map((a,i)=>actCard(a,i,'ai',0)).join('')}
+        </div>
+      </div>
+      <div class="fixed-block fixed-circle">
+        <div class="fixed-block-header">⭕ 圍圈收尾 <span class="time-badge">5 min ● 固定</span></div>
+        <div class="ci-options">
+          ${clOpts.map((opt,i)=>`<div class="ci-option${i===0?' active':''}" onclick="selectCL(${i},this)"><span class="ci-num">${i+1}</span>${escapeHtml(opt)}</div>`).join('')}
+        </div>
+      </div>
+      <div class="lesson-actions">
+        <button class="btn-load" onclick="loadImportedToAgenda('${escapeHtml(theme)}','ai')">📋 生成課堂流程 → 開始上課</button>
+        ${docUrl?`<a class="btn-doc" href="${escapeHtml(docUrl)}" target="_blank">📄 查看完整教案 ↗</a>`:''}
+      </div>
+    </div>`;
+  updateTimeTracker();
+}
+
+function loadImportedToAgenda(theme) {
+  const ciOpts = THEME_CHECKIN[theme] || ['圍圈開場'];
+  const ci     = ciOpts[selectedCIIdx] || ciOpts[0];
+  const clOpts = THEME_CIRCLE[theme]  || ['一人一句，圓滿結束'];
+  const cl     = clOpts[selectedCLIdx] || clOpts[0];
+  agendaItems = [
+    { text: '🌅 Check-in 簽到（5 分鐘）｜' + ci, done: false },
+    ...currentActivities.filter(a => a.on).map(a => ({
+      text: a.label + '（' + a.time + ' 分鐘）｜' + a.desc, done: false
+    })),
+    { text: '⭕ 圍圈收尾（5 分鐘）｜' + cl, done: false }
+  ];
+  renderAgenda();
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-agenda').classList.add('active');
+}
+
+/* ══ FULLSCREEN ══ */
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+/* ══ MINI-TIMER ══ */
+let miniSecs   = 40 * 60;
+let miniTotal  = 40 * 60;
+let miniRunning = false;
+let miniInterval = null;
+let miniCustomOpen = false;
+
+function setMiniTimer(min) {
+  clearInterval(miniInterval);
+  miniRunning = false;
+  miniSecs    = min * 60;
+  miniTotal   = min * 60;
+  document.getElementById('mini-play-btn').textContent = '▶';
+  document.querySelectorAll('.mini-pre').forEach(b => b.classList.remove('active'));
+  if (min === 40) document.getElementById('mp-40').classList.add('active');
+  else if (min === 5) document.getElementById('mp-5').classList.add('active');
+  else document.getElementById('mp-c').classList.add('active');
+  hideMiniCustom();
+  updateMiniDisplay();
+}
+
+function toggleMiniCustom() {
+  miniCustomOpen = !miniCustomOpen;
+  const row = document.getElementById('mini-custom-row');
+  row.style.display = miniCustomOpen ? 'flex' : 'none';
+  if (miniCustomOpen) document.getElementById('mini-cust').focus();
+}
+
+function hideMiniCustom() {
+  miniCustomOpen = false;
+  document.getElementById('mini-custom-row').style.display = 'none';
+}
+
+function applyMiniCustom() {
+  const v = parseInt(document.getElementById('mini-cust').value) || 10;
+  const clamped = Math.max(1, Math.min(99, v));
+  setMiniTimer(clamped);
+  document.getElementById('mp-c').classList.add('active');
+}
+
+function toggleMiniPlay() {
+  if (miniSecs <= 0) { resetMiniTimer(); return; }
+  miniRunning = !miniRunning;
+  document.getElementById('mini-play-btn').textContent = miniRunning ? '⏸' : '▶';
+  if (miniRunning) {
+    miniInterval = setInterval(miniTick, 1000);
+  } else {
+    clearInterval(miniInterval);
+  }
+}
+
+function miniTick() {
+  if (miniSecs > 0) {
+    miniSecs--;
+    updateMiniDisplay();
+  }
+  if (miniSecs <= 0) {
+    clearInterval(miniInterval);
+    miniRunning = false;
+    document.getElementById('mini-play-btn').textContent = '▶';
+    // Flash danger
+    const d = document.getElementById('mini-digits');
+    let f = 0;
+    const flash = setInterval(() => {
+      d.style.visibility = (f++ % 2 === 0) ? 'hidden' : 'visible';
+      if (f > 10) { clearInterval(flash); d.style.visibility = 'visible'; }
+    }, 300);
+  }
+}
+
+function resetMiniTimer() {
+  clearInterval(miniInterval);
+  miniRunning = false;
+  miniSecs    = miniTotal;
+  document.getElementById('mini-play-btn').textContent = '▶';
+  updateMiniDisplay();
+}
+
+function updateMiniDisplay() {
+  const m = Math.floor(miniSecs / 60);
+  const s = miniSecs % 60;
+  const d = document.getElementById('mini-digits');
+  d.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const pct = miniTotal > 0 ? miniSecs / miniTotal : 1;
+  d.className = '';
+  if (pct <= 0.10) d.classList.add('danger');
+  else if (pct <= 0.25) d.classList.add('warn');
+}
+
+// Close custom row when clicking outside
+document.addEventListener('click', function(e) {
+  if (miniCustomOpen && !document.getElementById('mini-timer-wrap').contains(e.target)) {
+    hideMiniCustom();
+  }
+});
+</script>
+</body>
+</html>
