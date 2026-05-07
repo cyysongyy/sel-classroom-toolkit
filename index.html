@@ -1137,16 +1137,33 @@
         </div>
       </div>
 
-      <div class="sel-row">
-        <span class="sel-label">年級</span>
-        <div id="grade-btns" style="display:flex;gap:6px;flex-wrap:wrap;">
-          <button class="sel-btn" data-grade="1" onclick="selectGrade(1)">一年級</button>
-          <button class="sel-btn" data-grade="2" onclick="selectGrade(2)">二年級</button>
-          <button class="sel-btn" data-grade="3" onclick="selectGrade(3)">三年級</button>
-          <button class="sel-btn" data-grade="4" onclick="selectGrade(4)">四年級</button>
-          <button class="sel-btn" data-grade="5" onclick="selectGrade(5)">五年級</button>
-          <button class="sel-btn" data-grade="6" onclick="selectGrade(6)">六年級</button>
-          <button class="sel-btn" data-grade="custom" onclick="selectGrade('custom')" style="border-style:dashed;color:#8890c8;">＋ 單課教案</button>
+      <!-- Mode selector cards -->
+      <div id="mode-selector" style="display:flex;gap:14px;margin-bottom:18px;flex-wrap:wrap;">
+        <div id="mode-card-library" onclick="selectMode('library')"
+          style="flex:1;min-width:180px;background:#1e2050;border:2px solid #4a52cc;border-radius:14px;padding:18px 20px;cursor:pointer;transition:all .2s;">
+          <div style="font-size:1.5rem;margin-bottom:6px;">📚</div>
+          <div style="font-size:1rem;font-weight:700;color:#c8ccff;margin-bottom:4px;">教案庫</div>
+          <div style="font-size:0.78rem;color:#7880b0;line-height:1.5;">整學期使用<br>依年級 &amp; 週次選取教案</div>
+        </div>
+        <div id="mode-card-single" onclick="selectMode('single')"
+          style="flex:1;min-width:180px;background:#1a1a3a;border:2px solid #3a3a6a;border-radius:14px;padding:18px 20px;cursor:pointer;transition:all .2s;">
+          <div style="font-size:1.5rem;margin-bottom:6px;">📄</div>
+          <div style="font-size:1rem;font-weight:700;color:#8890c8;margin-bottom:4px;">單課教案</div>
+          <div style="font-size:0.78rem;color:#5a6090;line-height:1.5;">單堂課使用<br>上傳或貼入單一教案</div>
+        </div>
+      </div>
+      <!-- Library mode: grade buttons -->
+      <div id="library-mode-section">
+        <div class="sel-row">
+          <span class="sel-label">年級</span>
+          <div id="grade-btns" style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="sel-btn" data-grade="1" onclick="selectGrade(1)">一年級</button>
+            <button class="sel-btn" data-grade="2" onclick="selectGrade(2)">二年級</button>
+            <button class="sel-btn" data-grade="3" onclick="selectGrade(3)">三年級</button>
+            <button class="sel-btn" data-grade="4" onclick="selectGrade(4)">四年級</button>
+            <button class="sel-btn" data-grade="5" onclick="selectGrade(5)">五年級</button>
+            <button class="sel-btn" data-grade="6" onclick="selectGrade(6)">六年級</button>
+          </div>
         </div>
       </div>
 
@@ -1708,6 +1725,33 @@ const THEME_ACTIVITIES = {
 };
 
 let selGrade = null, selWeek = null, currentActivities = [], selectedCIIdx = 0, selectedCLIdx = 0;
+
+function selectMode(mode) {
+  const cardLib    = document.getElementById('mode-card-library');
+  const cardSingle = document.getElementById('mode-card-single');
+  const libSection = document.getElementById('library-mode-section');
+
+  if (mode === 'library') {
+    cardLib.style.background   = '#1e2050';
+    cardLib.style.borderColor  = '#4a52cc';
+    cardLib.querySelector('div:nth-child(2)').style.color = '#c8ccff';
+    cardSingle.style.background  = '#1a1a3a';
+    cardSingle.style.borderColor = '#3a3a6a';
+    cardSingle.querySelector('div:nth-child(2)').style.color = '#8890c8';
+    libSection.style.display = 'block';
+    document.getElementById('import-inline').style.display = 'none';
+    document.getElementById('week-row').style.display = 'none';
+  } else {
+    cardSingle.style.background  = '#1e2050';
+    cardSingle.style.borderColor = '#4a52cc';
+    cardSingle.querySelector('div:nth-child(2)').style.color = '#c8ccff';
+    cardLib.style.background   = '#1a1a3a';
+    cardLib.style.borderColor  = '#3a3a6a';
+    cardLib.querySelector('div:nth-child(2)').style.color = '#8890c8';
+    libSection.style.display = 'none';
+    selectGrade('custom');
+  }
+}
 
 function selectGrade(g) {
   selGrade = g; selWeek = null;
@@ -2686,6 +2730,11 @@ document.addEventListener('click', function(e) {
     hideMiniCustom();
   }
 });
+
+// Initialize default mode on load
+(function() {
+  selectMode('library');
+})();
 </script>
 </body>
 </html>
