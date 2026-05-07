@@ -1415,7 +1415,7 @@ function escapeHtml(s) {
 // Week 6 SEL 40-min condensed lesson: 社會覺察 ─ 放大鏡視角
 [
   '🌅 Check-in 簽到（5 分鐘）｜今天心情幾度？一人一句，圍圈開場',
-  '🔍 入場券：仔細觀察（5 分鐘）｜站起來→跳起來看天花板，體驗「放大鏡」的比喻',
+  '🔍 Check-in：仔細觀察（5 分鐘）｜站起來→跳起來看天花板，體驗「放大鏡」的比喻',
   '🖼️ 偵探視角：情境圖討論（8 分鐘）｜看投影片，用放大鏡找出圖中角色的感受與需求',
   '📖 故事朗讀 + 討論：一罐蠟筆（12 分鐘）｜朗讀故事→小馬為何生氣？章魚的視角是什麼？我們可以怎麼做？',
   '✍️ 出場券（5 分鐘）｜「用放大鏡，我學會了＿＿；下次我可以＿＿」',
@@ -1649,7 +1649,7 @@ const lessonDB = {
 // ── Per-lesson activity menus (specific lessons override theme defaults) ──
 const LESSON_ACTIVITIES = {
   '1_6': [ // 一年級 W6：放大鏡視角
-    {id:'l1', label:'🔍 入場券：仔細觀察',     desc:'站起來→跳起來看天花板，感受「放大鏡」比喻', time:5, on:true},
+    {id:'l1', label:'🔍 Check-in：仔細觀察',     desc:'站起來→跳起來看天花板，感受「放大鏡」比喻', time:5, on:true},
     {id:'l2', label:'🖼️ 偵探視角：情境圖討論', desc:'播放投影片，用放大鏡找出角色的感受與需求',   time:8, on:true},
     {id:'l3', label:'📖 故事朗讀：一罐蠟筆',   desc:'小馬與章魚的故事，建立換位思考情境',         time:7, on:true},
     {id:'l4', label:'💬 故事討論三問',          desc:'小馬為何生氣？章魚怎麼想？如何解決？',       time:5, on:true},
@@ -1661,7 +1661,7 @@ const LESSON_ACTIVITIES = {
 // ── Theme-based default activity menus ──
 const THEME_ACTIVITIES = {
   '自我覺察': [
-    {id:'sa1', label:'🎯 入場券：情緒命名',       desc:'用一個詞命名現在的情緒，說說原因',         time:5,  on:true},
+    {id:'sa1', label:'🎯 Check-in：情緒命名',       desc:'用一個詞命名現在的情緒，說說原因',         time:5,  on:true},
     {id:'sa2', label:'🃏 情緒圖卡辨識',           desc:'圖卡命名情緒，辨識細膩情緒差異',           time:8,  on:false},
     {id:'sa3', label:'📖 教案主要活動',           desc:'本週教案核心體驗與引導',                   time:15, on:true,
      steps:['引入概念（故事朗讀／情緒圖卡展示）','個人體驗：命名自己的情緒，說說原因','引導討論：你在什麼情況下會有這個感覺？','連結生活：你可以怎麼善用對自己的了解？']},
@@ -1671,7 +1671,7 @@ const THEME_ACTIVITIES = {
   ],
   '自我管理': [
     {id:'sm1', label:'🧘 暖身：呼吸／身體掃描',  desc:'深呼吸或肌肉放鬆，安定身心',               time:5,  on:false},
-    {id:'sm2', label:'🎯 入場券：策略分享',       desc:'我最近用過的冷靜方法是…',                 time:5,  on:true},
+    {id:'sm2', label:'🎯 Check-in：策略分享',       desc:'我最近用過的冷靜方法是…',                 time:5,  on:true},
     {id:'sm3', label:'📖 教案主要活動',           desc:'本週教案核心體驗與引導',                   time:15, on:true,
      steps:['引入情緒調節概念（繪本／情境卡）','體驗活動：練習呼吸／身體掃描／暫停策略','討論：哪些情況最難冷靜？什麼策略最有效？','訂定個人承諾：下次情緒來時我要＿＿']},
     {id:'sm4', label:'🎭 角色扮演練習',           desc:'模擬情境，練習調節策略',                   time:8,  on:false},
@@ -1679,7 +1679,7 @@ const THEME_ACTIVITIES = {
     {id:'sm6', label:'✍️ 出場券書寫',             desc:'下次情緒來時，我會試著＿＿',             time:5,  on:true}
   ],
   '社會覺察': [
-    {id:'sc1', label:'🔍 入場券：觀察力練習',     desc:'仔細觀察圖片/環境，說說你發現什麼',       time:5,  on:true},
+    {id:'sc1', label:'🔍 Check-in：觀察力練習',     desc:'仔細觀察圖片/環境，說說你發現什麼',       time:5,  on:true},
     {id:'sc2', label:'🖼️ 情境圖片討論',           desc:'觀察圖中角色的感受與需求',                 time:8,  on:true},
     {id:'sc3', label:'📖 教案主要活動',           desc:'本週教案核心故事／體驗',                   time:12, on:true,
      steps:['展示情境圖／故事，引導仔細觀察','提問：這個人可能在想什麼？感受是什麼？','換位思考：如果你是他，你會怎麼做？','討論：生活中何時需要用「放大鏡」？']},
@@ -1688,7 +1688,7 @@ const THEME_ACTIVITIES = {
     {id:'sc6', label:'✍️ 出場券書寫',             desc:'用放大鏡，我看見了＿＿；我可以＿＿',     time:5,  on:true}
   ],
   '關係技巧': [
-    {id:'rs1', label:'🎯 入場券：關係溫度計',     desc:'和朋友／家人的關係最近幾度？',             time:5,  on:true},
+    {id:'rs1', label:'🎯 Check-in：關係溫度計',     desc:'和朋友／家人的關係最近幾度？',             time:5,  on:true},
     {id:'rs2', label:'🗣️ 溝通技巧介紹',           desc:'三明治說話法或主動傾聽技巧',               time:8,  on:false},
     {id:'rs3', label:'📖 教案主要活動',           desc:'本週教案核心體驗與引導',                   time:15, on:true,
      steps:['介紹本週溝通技巧（三明治說話法／主動傾聽）','示範對話情境，請學生觀察關鍵動作','兩兩練習：運用新技巧進行對話','全班反思：哪個技巧最難做到？為什麼？']},
@@ -1697,7 +1697,7 @@ const THEME_ACTIVITIES = {
     {id:'rs6', label:'✍️ 出場券書寫',             desc:'我學到了＿＿；我想對身邊的人說＿＿',     time:5,  on:true}
   ],
   '負責任的決定': [
-    {id:'rd1', label:'🎯 入場券：決定回顧',       desc:'上週你做了一個讓自己驕傲的決定？',         time:5,  on:true},
+    {id:'rd1', label:'🎯 Check-in：決定回顧',       desc:'上週你做了一個讓自己驕傲的決定？',         time:5,  on:true},
     {id:'rd2', label:'⚖️ 情境分析討論',           desc:'呈現情境，討論不同選擇的後果',             time:8,  on:true},
     {id:'rd3', label:'📖 教案主要活動',           desc:'本週教案核心體驗與引導',                   time:12, on:true,
      steps:['呈現兩難情境，請學生思考各種選擇','分析選擇的後果：對自己？對別人？','介紹決策步驟：停→想→選→負責','小組討論：你會怎麼做？理由是什麼？']},
