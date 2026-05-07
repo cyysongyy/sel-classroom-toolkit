@@ -1820,7 +1820,8 @@ function renderLesson(g, w) {
         </div>
       </div>
 
-      <div class="fixed-block fixed-checkin">
+      <div id="checkin-merged-note" style="display:none;"></div>
+      <div class="fixed-block fixed-checkin" id="checkin-block">
         <div class="fixed-block-header">🌅 Check-in 簽到 <span class="time-badge">5 min ● 固定</span></div>
         <div class="ci-options">
           ${ciOpts.map((opt,i) => `<div class="ci-option${i===0?' active':''}" onclick="selectCI(${i},this)">\
@@ -1854,6 +1855,7 @@ function renderLesson(g, w) {
       </div>
     </div>`;
   updateTimeTracker();
+  updateCheckinMerge();
 }
 
 const DECISION_DIAGRAM_HTML = `
@@ -1908,6 +1910,23 @@ function toggleActivity(i, g, w) {
   currentActivities[i].on = !currentActivities[i].on;
   document.getElementById('activity-list').innerHTML = currentActivities.map((a,j) => actCard(a, j, g, w)).join('');
   updateTimeTracker();
+  updateCheckinMerge();
+}
+
+function updateCheckinMerge() {
+  const block  = document.getElementById('checkin-block');
+  const note   = document.getElementById('checkin-merged-note');
+  if (!block || !note) return;
+  const mergedAct = currentActivities.find(a => a.on && a.label.includes('Check-in'));
+  if (mergedAct) {
+    block.style.display = 'none';
+    note.style.display  = 'block';
+    note.innerHTML = '<div class="fixed-block fixed-checkin" style="border-style:dashed;opacity:0.9;"><div class="fixed-block-header">🌅 Check-in 簽到 <span class="time-badge" style="background:#1a4a2a;color:#3a9a5a;">已合併至課堂活動</span></div><div style="font-size:0.82rem;color:#3a9a5a;padding:4px 0 2px;">✅ 「' + mergedAct.label + '」同時擔任 Check-in，不重複進行</div></div>';
+  } else {
+    block.style.display = '';
+    note.style.display  = 'none';
+    note.innerHTML = '';
+  }
 }
 
 function updateTimeTracker() {
@@ -1939,9 +1958,12 @@ function loadLessonToAgenda(g, w) {
   const ci      = ciOpts[selectedCIIdx] || ciOpts[0];
   const clOpts  = THEME_CIRCLE[lesson.theme]  || ['一人一句，圓滿結束'];
   const cl      = clOpts[selectedCLIdx] || clOpts[0];
+  const mergedAct = currentActivities.find(a => a.on && a.label.includes('Check-in'));
   agendaItems = [
-    { text: '🌅 Check-in 簽到（5 分鐘）｜' + ci, done: false },
-    ...currentActivities.filter(a => a.on).map(a => ({
+    mergedAct
+      ? { text: '🌅 ' + mergedAct.label + '（' + mergedAct.time + ' 分鐘）｜' + mergedAct.desc, done: false }
+      : { text: '🌅 Check-in 簽到（5 分鐘）｜' + ci, done: false },
+    ...currentActivities.filter(a => a.on && a !== mergedAct).map(a => ({
       text: a.label + '（' + a.time + ' 分鐘）｜' + a.desc, done: false
     })),
     { text: '⭕ 圍圈收尾（5 分鐘）｜' + cl, done: false }
@@ -2524,7 +2546,8 @@ function renderImportedLesson(theme, title, label, extras) {
         </div>
       </div>
 
-      <div class="fixed-block fixed-checkin">
+      <div id="checkin-merged-note" style="display:none;"></div>
+      <div class="fixed-block fixed-checkin" id="checkin-block">
         <div class="fixed-block-header">🌅 Check-in 簽到 <span class="time-badge">5 min ● 固定</span></div>
         <div class="ci-options">
           ${ciOpts.map((opt,i)=>`<div class="ci-option${i===0?' active':''}" onclick="selectCI(${i},this)"><span class="ci-num">${i+1}</span>${escapeHtml(opt)}</div>`).join('')}
@@ -2554,6 +2577,7 @@ function renderImportedLesson(theme, title, label, extras) {
       </div>
     </div>`;
   updateTimeTracker();
+  updateCheckinMerge();
 }
 
 /* ── Render AI-generated lesson ── */
@@ -2579,7 +2603,8 @@ function renderAILesson(ai, label) {
           <span class="badge badge-date">✨ AI 分析 ／ ${escapeHtml(label)}</span>
         </div>
       </div>
-      <div class="fixed-block fixed-checkin">
+      <div id="checkin-merged-note" style="display:none;"></div>
+      <div class="fixed-block fixed-checkin" id="checkin-block">
         <div class="fixed-block-header">🌅 Check-in 簽到 <span class="time-badge">5 min ● 固定</span></div>
         <div class="ci-options">
           ${ciOpts.map((opt,i)=>`<div class="ci-option${i===0?' active':''}" onclick="selectCI(${i},this)"><span class="ci-num">${i+1}</span>${escapeHtml(opt)}</div>`).join('')}
@@ -2606,6 +2631,7 @@ function renderAILesson(ai, label) {
       </div>
     </div>`;
   updateTimeTracker();
+  updateCheckinMerge();
 }
 
 function loadImportedToAgenda(theme) {
@@ -2613,9 +2639,12 @@ function loadImportedToAgenda(theme) {
   const ci     = ciOpts[selectedCIIdx] || ciOpts[0];
   const clOpts = THEME_CIRCLE[theme]  || ['一人一句，圓滿結束'];
   const cl     = clOpts[selectedCLIdx] || clOpts[0];
+  const mergedAct = currentActivities.find(a => a.on && a.label.includes('Check-in'));
   agendaItems = [
-    { text: '🌅 Check-in 簽到（5 分鐘）｜' + ci, done: false },
-    ...currentActivities.filter(a => a.on).map(a => ({
+    mergedAct
+      ? { text: '🌅 ' + mergedAct.label + '（' + mergedAct.time + ' 分鐘）｜' + mergedAct.desc, done: false }
+      : { text: '🌅 Check-in 簽到（5 分鐘）｜' + ci, done: false },
+    ...currentActivities.filter(a => a.on && a !== mergedAct).map(a => ({
       text: a.label + '（' + a.time + ' 分鐘）｜' + a.desc, done: false
     })),
     { text: '⭕ 圍圈收尾（5 分鐘）｜' + cl, done: false }
